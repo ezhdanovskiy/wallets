@@ -1,11 +1,9 @@
 CREATE TABLE "wallets"
 (
-    "id"         bigserial PRIMARY KEY,
-    "name"       varchar     NOT NULL,
+    "name"       varchar     PRIMARY KEY,
     "balance"    bigint      NOT NULL DEFAULT (0),
     "created_at" timestamptz NOT NULL DEFAULT (now()),
-    "updated_at" timestamptz NOT NULL DEFAULT (now()),
-    UNIQUE (name)
+    "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
 
 /*

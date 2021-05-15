@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ezhdanovskiy/wallets/internal/dto"
+	"github.com/ezhdanovskiy/wallets/internal/httperr"
 )
 
 type Server struct {
@@ -23,7 +24,9 @@ type Server struct {
 }
 
 type Service interface {
-	CreateWallet(wallet dto.Wallet) error
+	CreateWallet(wallet dto.CreateWalletRequest) error
+	IncreaseWalletBalance(deposit dto.Deposit) error
+	Transfer(transfer dto.Transfer) error
 }
 
 func NewServer(logger *zap.SugaredLogger, httpPort int, svc Service) *Server {
@@ -44,6 +47,8 @@ func (s *Server) Run() error {
 
 	router.Route("/v1", func(r chi.Router) {
 		r.Post("/wallets", s.createWallet)
+		r.Post("/wallets/deposit", s.deposit)
+		r.Post("/wallets/transfer", s.transfer)
 	})
 
 	s.httpServer = &http.Server{
@@ -81,21 +86,6 @@ func (s *Server) writeResponse(w http.ResponseWriter, code int, payload interfac
 		return
 	}
 
-	if err, _ := payload.(error); err != nil {
-		s.log.Error(err.Error())
-
-		data, err := json.Marshal(Resp{Error: err.Error()})
-		if err != nil {
-			s.log.With("error", err).Error("failed to marshal json")
-			return
-		}
-
-		if _, err := w.Write(data); err != nil {
-			s.log.Errorf("http error response: %s", err.Error())
-		}
-		return
-	}
-
 	data, err := json.Marshal(Resp{Data: payload})
 	if err != nil {
 		s.log.With("error", err).Error("failed to marshal json")
@@ -106,4 +96,34 @@ func (s *Server) writeResponse(w http.ResponseWriter, code int, payload interfac
 	if _, err := w.Write(data); err != nil {
 		s.log.Errorf("http response: %s", err.Error())
 	}
+}
+
+func (s *Server) writeErrorResponse(w http.ResponseWriter, err error) {
+	w.Header().Set("content-type", "application/json; charset=utf-8")
+	if err == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	s.log.Error(err.Error())
+
+	var resp Resp
+	if e, ok := err.(*httperr.Error); ok {
+		w.WriteHeader(e.StatusCode)
+		resp.Error = e.Message
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		resp.Error = err.Error()
+	}
+
+	data, err := json.Marshal(resp)
+	if err != nil {
+		s.log.With("error", err).Error("failed to marshal json")
+		return
+	}
+
+	if _, err := w.Write(data); err != nil {
+		s.log.Errorf("http error response: %s", err.Error())
+	}
+	return
 }

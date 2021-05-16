@@ -6,7 +6,8 @@ CREATE TABLE "wallets"
     "updated_at" timestamptz NOT NULL DEFAULT (now())
 );
 
-
+/*
 INSERT INTO wallets (name, balance)
 VALUES ('wallet01', 100000),
        ('wallet02', 100000);
+*/

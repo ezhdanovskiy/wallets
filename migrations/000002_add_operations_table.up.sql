@@ -10,7 +10,8 @@ CREATE TABLE "operations"
     "created_at"   timestamptz    NOT NULL DEFAULT now()
 );
 
-
+/*
 INSERT INTO operations (wallet, type, amount)
 VALUES ('wallet01', 'deposit', 100000),
        ('wallet02', 'deposit', 100000);
+*/

@@ -19,4 +19,5 @@ type OperationsFilter struct {
 	EndDate   int64
 	Limit     int64
 	Offset    int64
+	Format    string // todo: json/csv
 }

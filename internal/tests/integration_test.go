@@ -1,3 +1,5 @@
+// +build integration
+
 package tests
 
 import (
@@ -21,7 +23,7 @@ import (
 	"github.com/ezhdanovskiy/wallets/internal/service"
 )
 
-const logsEnabled = true
+const logsEnabled = false
 
 func TestCreateWallet(t *testing.T) {
 	ts := newTestService(t)

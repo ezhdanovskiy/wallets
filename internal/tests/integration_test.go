@@ -39,7 +39,7 @@ func TestCreateWallet(t *testing.T) {
 	ts.cleanWallets(testWalletName)
 }
 
-func TestDepositWallet(t *testing.T) {
+func TestDeposit(t *testing.T) {
 	ts := newTestService(t)
 	defer ts.Finish()
 
@@ -73,6 +73,62 @@ func TestDepositWallet(t *testing.T) {
 	assert.Equal(t, repository.SystemWalletName, operations[0].OtherWallet)
 
 	ts.cleanWallets(testWalletName)
+}
+
+func TestTransfer(t *testing.T) {
+	ts := newTestService(t)
+	defer ts.Finish()
+
+	const (
+		testWalletName01            = "TestTransferWalletName01"
+		testWalletName02            = "TestTransferWalletName02"
+		testAmount       dto.Amount = 123.45
+	)
+	ts.cleanWallets(testWalletName01, testWalletName02)
+
+	require.NoError(t, ts.repo.CreateWallet(testWalletName01))
+	require.NoError(t, ts.repo.IncreaseWalletBalance(testWalletName01, testAmount.GetInt()))
+	require.NoError(t, ts.repo.CreateWallet(testWalletName02))
+
+	code, body := ts.doRequest(http.MethodPost, "/wallets/transfer", dto.Transfer{
+		WalletFrom: testWalletName01,
+		WalletTo:   testWalletName02,
+		Amount:     testAmount,
+	})
+	assert.Equal(t, 200, code)
+	assert.Empty(t, body)
+
+	wallet, err := ts.repo.GetWallet(testWalletName01)
+	require.NoError(t, err)
+	require.NotNil(t, wallet)
+	assert.EqualValues(t, 0, wallet.Balance)
+
+	wallet, err = ts.repo.GetWallet(testWalletName02)
+	require.NoError(t, err)
+	require.NotNil(t, wallet)
+	assert.EqualValues(t, testAmount.GetInt(), wallet.Balance)
+
+	operations, err := ts.repo.GetOperations(dto.OperationsFilter{Wallet: testWalletName01})
+	require.NoError(t, err)
+	require.Len(t, operations, 2)
+	assert.Equal(t, testWalletName01, operations[0].Wallet)
+	assert.Equal(t, repository.OperationTypeDeposit, operations[0].Type)
+	assert.Equal(t, testAmount, operations[0].Amount)
+	assert.Equal(t, repository.SystemWalletName, operations[0].OtherWallet)
+	assert.Equal(t, testWalletName01, operations[1].Wallet)
+	assert.Equal(t, repository.OperationTypeWithdrawal, operations[1].Type)
+	assert.Equal(t, testAmount, operations[1].Amount)
+	assert.Equal(t, testWalletName02, operations[1].OtherWallet)
+
+	operations, err = ts.repo.GetOperations(dto.OperationsFilter{Wallet: testWalletName02})
+	require.NoError(t, err)
+	require.Len(t, operations, 1)
+	assert.Equal(t, testWalletName02, operations[0].Wallet)
+	assert.Equal(t, repository.OperationTypeDeposit, operations[0].Type)
+	assert.Equal(t, testAmount, operations[0].Amount)
+	assert.Equal(t, testWalletName01, operations[0].OtherWallet)
+
+	ts.cleanWallets(testWalletName01, testWalletName02)
 }
 
 // TestServer ---------------------------------------------------------------------------------------------------------

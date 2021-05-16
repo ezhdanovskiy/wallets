@@ -8,10 +8,12 @@ import (
 
 type Repository interface {
 	CreateWallet(walletName string) error
+	GetWallet(walletName string) (*dto.Wallet, error)
 	IncreaseWalletBalance(walletName string, amount uint64) error
 
 	RunWithTransaction(f func(tx *sqlx.Tx) error) error
 	GetWalletsForUpdateTx(tx *sqlx.Tx, walletNames []string) ([]dto.Wallet, error)
-	DecreaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount uint64) error
-	IncreaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount uint64) error
+	TransferTx(tx *sqlx.Tx, walletFrom, walletTo string, amount uint64) error
 }
+
+//go:generate mockgen -destination=./mocks/repository_mock.go -package=mocks . Repository

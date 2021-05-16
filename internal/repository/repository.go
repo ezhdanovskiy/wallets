@@ -2,6 +2,7 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -22,6 +23,7 @@ type Repo struct {
 const (
 	OperationTypeDeposit    = "deposit"
 	OperationTypeWithdrawal = "withdrawal"
+	SystemWalletName        = "system"
 )
 
 func NewRepo(logger *zap.SugaredLogger, host string, port int, user, password, dbname string) (*Repo, error) {
@@ -76,16 +78,39 @@ ON CONFLICT DO NOTHING
 	return nil
 }
 
+func (r *Repo) GetWallet(walletName string) (*dto.Wallet, error) {
+	const query = `
+SELECT * 
+FROM wallets 
+WHERE name = $1 
+`
+
+	var dbWallet Wallet
+	err := r.db.Get(&dbWallet, query, walletName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("select: %w", err)
+	}
+
+	return &dto.Wallet{
+		ID:      dbWallet.ID,
+		Name:    dbWallet.Name,
+		Balance: dbWallet.Balance,
+	}, nil
+}
+
 func (r *Repo) IncreaseWalletBalance(walletName string, amount uint64) error {
-	r.log.With("wallet_name", walletName, "amount", amount).Debug("IncreaseWalletAmount")
+	r.log.With("wallet_name", walletName, "amount", amount).Debug("IncreaseWalletBalance")
 
 	return r.RunWithTransaction(func(tx *sqlx.Tx) error {
-		err := r.IncreaseWalletBalanceTx(tx, walletName, amount)
+		err := r.increaseWalletBalanceTx(tx, walletName, amount)
 		if err != nil {
 			return err
 		}
 
-		return nil
+		return r.insertOperation(tx, walletName, OperationTypeDeposit, amount, SystemWalletName)
 	})
 }
 
@@ -143,8 +168,34 @@ FOR UPDATE
 	return wallets, nil
 }
 
-func (r *Repo) DecreaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount uint64) error {
-	r.log.With("wallet_name", walletName, "amount", amount).Debug("DecreaseWalletBalanceTx")
+func (r *Repo) TransferTx(tx *sqlx.Tx, walletFrom, walletTo string, amount uint64) error {
+	r.log.With("wallet_from", walletFrom, "wallet_to", walletTo, "amount", amount).Debug("TransferTx")
+
+	err := r.decreaseWalletBalanceTx(tx, walletFrom, amount)
+	if err != nil {
+		return fmt.Errorf("decrease wallet balance: %w", err)
+	}
+
+	err = r.insertOperation(tx, walletFrom, OperationTypeWithdrawal, amount, walletTo)
+	if err != nil {
+		return fmt.Errorf("insert operation: %w", err)
+	}
+
+	err = r.increaseWalletBalanceTx(tx, walletTo, amount)
+	if err != nil {
+		return fmt.Errorf("increase wallet balance: %w", err)
+	}
+
+	err = r.insertOperation(tx, walletTo, OperationTypeDeposit, amount, walletFrom)
+	if err != nil {
+		return fmt.Errorf("insert operation: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repo) decreaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount uint64) error {
+	r.log.With("wallet", walletName, "amount", amount).Debug("decreaseWalletBalanceTx")
 	const query = `
 UPDATE wallets
 SET balance = balance - $2
@@ -156,11 +207,11 @@ WHERE name = $1 AND balance >= $2
 		return fmt.Errorf("update wallets: %w", err)
 	}
 
-	return r.insertOperation(tx, walletName, OperationTypeWithdrawal, amount)
+	return nil
 }
 
-func (r *Repo) IncreaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount uint64) error {
-	r.log.With("wallet_name", walletName, "amount", amount).Debug("IncreaseWalletBalanceTx")
+func (r *Repo) increaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount uint64) error {
+	r.log.With("wallet", walletName, "amount", amount).Debug("increaseWalletBalanceTx")
 	const query = `
 UPDATE wallets
 SET balance = balance + $2
@@ -172,18 +223,18 @@ WHERE name = $1
 		return fmt.Errorf("update wallets: %w", err)
 	}
 
-	return r.insertOperation(tx, walletName, OperationTypeDeposit, amount)
+	return nil
 }
 
-func (r *Repo) insertOperation(tx *sqlx.Tx, walletName, opType string, amount uint64) error {
-	r.log.With("wallet_name", walletName, "amount", amount).Debug("insertOperation")
+func (r *Repo) insertOperation(tx *sqlx.Tx, wallet, opType string, amount uint64, otherWallet string) error {
+	r.log.With("wallet", wallet, "type", opType, "amount", amount, "other", otherWallet).Debug("insertOperation")
 
 	const query = `
-INSERT INTO operations (wallet_to, operation, amount)
-VALUES ($1, $2, $3)
+INSERT INTO operations (wallet, type, amount, other_wallet)
+VALUES ($1, $2, $3, $4)
 `
 
-	_, err := tx.Exec(query, walletName, opType, amount)
+	_, err := tx.Exec(query, wallet, opType, amount, otherWallet)
 	if err != nil {
 		return fmt.Errorf("update wallets: %w", err)
 	}

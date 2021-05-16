@@ -35,7 +35,7 @@ func (s *Server) deposit(w http.ResponseWriter, r *http.Request) {
 
 	err := s.svc.IncreaseWalletBalance(deposit)
 	if err != nil {
-		s.writeResponse(w, http.StatusInternalServerError, err)
+		s.writeErrorResponse(w, err)
 		return
 	}
 

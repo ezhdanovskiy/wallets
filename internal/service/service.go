@@ -37,7 +37,15 @@ func (s *Service) CreateWallet(wallet dto.CreateWalletRequest) error {
 
 // IncreaseWalletBalance increases wallet balance.
 func (s *Service) IncreaseWalletBalance(deposit dto.Deposit) error {
-	err := s.repo.IncreaseWalletBalance(deposit.Wallet, deposit.Amount.GetInt())
+	wallet, err := s.repo.GetWallet(deposit.Wallet)
+	if err != nil {
+		return ErrDatabase.Wrap(err)
+	}
+	if wallet == nil {
+		return httperr.Wrap(err, http.StatusNotFound, "wallet not found")
+	}
+
+	err = s.repo.IncreaseWalletBalance(deposit.Wallet, deposit.Amount.GetInt())
 	if err != nil {
 		return ErrDatabase.Wrap(err)
 	}
@@ -53,31 +61,26 @@ func (s *Service) Transfer(transfer dto.Transfer) error {
 
 		if len(wallets) < 2 {
 			if len(wallets) == 0 {
-				return httperr.Wrap(err, http.StatusNotFound, "wallets not found")
+				return httperr.New(http.StatusNotFound, "wallets not found")
 			}
 			if wallets[0].Name == transfer.WalletFrom {
-				return httperr.Wrap(err, http.StatusNotFound, "wallet_to not found")
+				return httperr.New(http.StatusNotFound, "wallet_to not found")
 			}
-			return httperr.Wrap(err, http.StatusNotFound, "wallet_from not found")
+			return httperr.New(http.StatusNotFound, "wallet_from not found")
 		}
 
 		for _, w := range wallets {
 			if w.Name == transfer.WalletFrom {
 				if w.Balance < transfer.Amount.GetInt() {
-					return httperr.Wrap(err, http.StatusUnprocessableEntity, "not enough money")
+					return httperr.New(http.StatusUnprocessableEntity, "not enough money")
 				}
 				break
 			}
 		}
 
-		err = s.repo.DecreaseWalletBalanceTx(tx, transfer.WalletFrom, transfer.Amount.GetInt())
+		err = s.repo.TransferTx(tx, transfer.WalletFrom, transfer.WalletTo, transfer.Amount.GetInt())
 		if err != nil {
-			return ErrDatabase.Wrap(fmt.Errorf("decrease wallet balance: %w", err))
-		}
-
-		err = s.repo.IncreaseWalletBalanceTx(tx, transfer.WalletTo, transfer.Amount.GetInt())
-		if err != nil {
-			return ErrDatabase.Wrap(fmt.Errorf("increase wallet balance: %w", err))
+			return ErrDatabase.Wrap(fmt.Errorf("transfer: %w", err))
 		}
 
 		return nil

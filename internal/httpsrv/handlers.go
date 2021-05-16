@@ -1,4 +1,4 @@
-package http
+package httpsrv
 
 import (
 	"encoding/json"
@@ -11,6 +11,8 @@ import (
 var ErrBodyDecode = httperr.New(http.StatusBadRequest, "failed to decode body")
 
 func (s *Server) createWallet(w http.ResponseWriter, r *http.Request) {
+	s.log.Debug("createWallet")
+
 	var wallet dto.CreateWalletRequest
 	if err := json.NewDecoder(r.Body).Decode(&wallet); err != nil {
 		s.writeErrorResponse(w, ErrBodyDecode.Wrap(err))

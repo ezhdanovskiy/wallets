@@ -7,6 +7,5 @@ type Wallet struct {
 }
 
 type CreateWalletRequest struct {
-	ID   int64  `json:"-"`
 	Name string `json:"name"`
 }

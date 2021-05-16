@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ezhdanovskiy/wallets/internal/config"
-	"github.com/ezhdanovskiy/wallets/internal/http"
+	"github.com/ezhdanovskiy/wallets/internal/httpsrv"
 	"github.com/ezhdanovskiy/wallets/internal/repository"
 	"github.com/ezhdanovskiy/wallets/internal/service"
 )
@@ -19,7 +19,7 @@ type Application struct {
 	cfg *config.Config
 	svc *service.Service
 
-	httpServer *http.Server
+	httpServer *httpsrv.Server
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -58,7 +58,7 @@ func NewApplication() (*Application, error) {
 func (a *Application) Run() error {
 	a.log.Info("Run application")
 
-	a.httpServer = http.NewServer(a.log, a.cfg.HttpPort, a.svc)
+	a.httpServer = httpsrv.NewServer(a.log, a.cfg.HttpPort, a.svc)
 
 	a.log.Infof("Run HTTP server on port %v", a.cfg.HttpPort)
 	err := a.httpServer.Run()

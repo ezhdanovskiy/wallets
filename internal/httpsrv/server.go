@@ -1,5 +1,5 @@
-// Package http contains the HTTP server and associated endpoint handlers.
-package http
+// Package httpsrv contains the HTTP server and associated endpoint handlers.
+package httpsrv
 
 import (
 	"context"
@@ -45,11 +45,7 @@ func (s *Server) Run() error {
 		promhttp.Handler(),
 	)
 
-	router.Route("/v1", func(r chi.Router) {
-		r.Post("/wallets", s.createWallet)
-		r.Post("/wallets/deposit", s.deposit)
-		r.Post("/wallets/transfer", s.transfer)
-	})
+	router.Route("/v1", s.GetV1ApiRouters())
 
 	s.httpServer = &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.httpPort),
@@ -62,6 +58,14 @@ func (s *Server) Run() error {
 	}
 
 	return nil
+}
+
+func (s *Server) GetV1ApiRouters() func(chi.Router) {
+	return func(r chi.Router) {
+		r.Post("/wallets", s.createWallet)
+		r.Post("/wallets/deposit", s.deposit)
+		r.Post("/wallets/transfer", s.transfer)
+	}
 }
 
 func (s *Server) Shutdown() {

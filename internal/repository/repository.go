@@ -35,24 +35,33 @@ func NewRepo(logger *zap.SugaredLogger, host string, port int, user, password, d
 		return nil, fmt.Errorf("connect database: %w", err)
 	}
 
-	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+	err = MigrateUp(logger, db, "file://migrations")
 	if err != nil {
-		return nil, fmt.Errorf("migrate NewWithDatabaseInstance: %w", err)
+		return nil, err
+	}
+
+	return NewRepoWithDB(logger, db)
+}
+
+func MigrateUp(logger *zap.SugaredLogger, db *sqlx.DB, path string) error {
+	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
+	m, err := migrate.NewWithDatabaseInstance(path, "postgres", driver)
+	if err != nil {
+		return fmt.Errorf("migrate NewWithDatabaseInstance: %w", err)
 	}
 
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
-		return nil, fmt.Errorf("migrate Up: %w", err)
+		return fmt.Errorf("migrate Up: %w", err)
 	}
 
 	version, dirty, err := m.Version()
 	if err != nil && err != migrate.ErrNoChange {
-		return nil, fmt.Errorf("migrate version: %w", err)
+		return fmt.Errorf("migrate version: %w", err)
 	}
 	logger.With("version", version, "dirty", dirty).Info("Migrations applied")
 
-	return NewRepoWithDB(logger, db)
+	return nil
 }
 
 func NewRepoWithDB(logger *zap.SugaredLogger, db *sqlx.DB) (*Repo, error) {
@@ -63,7 +72,7 @@ func NewRepoWithDB(logger *zap.SugaredLogger, db *sqlx.DB) (*Repo, error) {
 }
 
 func (r *Repo) CreateWallet(walletName string) error {
-	r.log.With("wallet_name", walletName).Debug("CreateWallet")
+	r.log.With("wallet", walletName).Debug("CreateWallet")
 	const query = `
 INSERT INTO wallets (name) 
 VALUES ($1) 
@@ -79,6 +88,7 @@ ON CONFLICT DO NOTHING
 }
 
 func (r *Repo) GetWallet(walletName string) (*dto.Wallet, error) {
+	r.log.With("wallet", walletName).Debug("GetWallet")
 	const query = `
 SELECT * 
 FROM wallets 
@@ -95,7 +105,6 @@ WHERE name = $1
 	}
 
 	return &dto.Wallet{
-		ID:      dbWallet.ID,
 		Name:    dbWallet.Name,
 		Balance: dbWallet.Balance,
 	}, nil
@@ -160,7 +169,6 @@ FOR UPDATE
 
 	wallets := make([]dto.Wallet, len(dbWallets))
 	for i := range dbWallets {
-		wallets[i].ID = dbWallets[i].ID
 		wallets[i].Name = dbWallets[i].Name
 		wallets[i].Balance = dbWallets[i].Balance
 	}
@@ -240,4 +248,30 @@ VALUES ($1, $2, $3, $4)
 	}
 
 	return nil
+}
+
+func (r *Repo) GetOperations(walletName string) ([]dto.Operation, error) {
+	r.log.With("wallet", walletName).Debug("GetOperations")
+
+	const query = `
+SELECT * 
+FROM operations 
+WHERE wallet = $1
+`
+
+	dbOperations := make([]Operation, 0)
+	err := r.db.Select(&dbOperations, query, walletName)
+	if err != nil {
+		return nil, fmt.Errorf("select for update: %w", err)
+	}
+
+	operations := make([]dto.Operation, len(dbOperations))
+	for i := range dbOperations {
+		operations[i].Wallet = dbOperations[i].Wallet
+		operations[i].Type = dbOperations[i].Type
+		operations[i].Amount.SetAmount(dbOperations[i].Amount)
+		operations[i].OtherWallet = dbOperations[i].OtherWallet
+	}
+
+	return operations, nil
 }

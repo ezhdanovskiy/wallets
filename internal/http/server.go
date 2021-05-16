@@ -1,5 +1,5 @@
-// Package httpsrv contains the HTTP server and associated endpoint handlers.
-package httpsrv
+// Package http contains the HTTP server and associated endpoint handlers.
+package http
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package httpsrv
+package http
 
 import (
 	"encoding/json"

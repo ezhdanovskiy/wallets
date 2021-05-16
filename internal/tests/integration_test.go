@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ezhdanovskiy/wallets/internal/dto"
-	"github.com/ezhdanovskiy/wallets/internal/httpsrv"
+	httpsrv "github.com/ezhdanovskiy/wallets/internal/http"
 	"github.com/ezhdanovskiy/wallets/internal/repository"
 	"github.com/ezhdanovskiy/wallets/internal/service"
 )

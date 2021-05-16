@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ezhdanovskiy/wallets/csv"
 	"github.com/ezhdanovskiy/wallets/internal/dto"
 	"github.com/ezhdanovskiy/wallets/internal/httperr"
 )
@@ -111,6 +112,16 @@ func (s *Server) getOperations(w http.ResponseWriter, r *http.Request) {
 	operations, err := s.svc.GetOperations(filter)
 	if err != nil {
 		s.writeErrorResponse(w, err)
+		return
+	}
+
+	if r.URL.Query().Get("format") == "csv" {
+		data, err := csv.MarshalOperations(operations)
+		if err != nil {
+			s.writeErrorResponse(w, err)
+			return
+		}
+		s.writeResponse(w, http.StatusOK, data)
 		return
 	}
 

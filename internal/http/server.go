@@ -92,6 +92,13 @@ func (s *Server) writeResponse(w http.ResponseWriter, code int, payload interfac
 		return
 	}
 
+	if data, ok := payload.([]byte); ok {
+		if _, err := w.Write(data); err != nil {
+			s.log.Errorf("http response: %s", err.Error())
+		}
+		return
+	}
+
 	data, err := json.Marshal(Resp{Data: payload})
 	if err != nil {
 		s.log.With("error", err).Error("failed to marshal json")

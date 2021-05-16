@@ -48,6 +48,21 @@ func (mr *MockRepositoryMockRecorder) CreateWallet(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWallet", reflect.TypeOf((*MockRepository)(nil).CreateWallet), arg0)
 }
 
+// GetOperations mocks base method
+func (m *MockRepository) GetOperations(arg0 dto.OperationsFilter) ([]dto.Operation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOperations", arg0)
+	ret0, _ := ret[0].([]dto.Operation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOperations indicates an expected call of GetOperations
+func (mr *MockRepositoryMockRecorder) GetOperations(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperations", reflect.TypeOf((*MockRepository)(nil).GetOperations), arg0)
+}
+
 // GetWallet mocks base method
 func (m *MockRepository) GetWallet(arg0 string) (*dto.Wallet, error) {
 	m.ctrl.T.Helper()

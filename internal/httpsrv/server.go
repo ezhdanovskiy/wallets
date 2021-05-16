@@ -24,9 +24,10 @@ type Server struct {
 }
 
 type Service interface {
-	CreateWallet(wallet dto.CreateWalletRequest) error
-	IncreaseWalletBalance(deposit dto.Deposit) error
-	Transfer(transfer dto.Transfer) error
+	CreateWallet(dto.CreateWalletRequest) error
+	IncreaseWalletBalance(dto.Deposit) error
+	Transfer(dto.Transfer) error
+	GetOperations(dto.OperationsFilter) ([]dto.Operation, error)
 }
 
 func NewServer(logger *zap.SugaredLogger, httpPort int, svc Service) *Server {
@@ -65,6 +66,7 @@ func (s *Server) GetV1ApiRouters() func(chi.Router) {
 		r.Post("/wallets", s.createWallet)
 		r.Post("/wallets/deposit", s.deposit)
 		r.Post("/wallets/transfer", s.transfer)
+		r.Get("/operations", s.getOperations)
 	}
 }
 

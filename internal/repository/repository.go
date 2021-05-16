@@ -4,6 +4,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -250,17 +251,59 @@ VALUES ($1, $2, $3, $4)
 	return nil
 }
 
-func (r *Repo) GetOperations(walletName string) ([]dto.Operation, error) {
-	r.log.With("wallet", walletName).Debug("GetOperations")
+func (r *Repo) GetOperations(filter dto.OperationsFilter) ([]dto.Operation, error) {
+	r.log.With("wallet", filter.Wallet).Debug("GetOperations")
 
-	const query = `
+	queryTempl := `
 SELECT * 
 FROM operations 
-WHERE wallet = $1
+WHERE %s
+ORDER BY created_at
 `
 
+	namedArgs := make(map[string]interface{}) // Prepare named parameters.
+	var whereParts []string                   // Generate where clause.
+
+	whereParts = append(whereParts, "wallet = :wallet")
+	namedArgs["wallet"] = filter.Wallet
+
+	if len(filter.Type) != 0 {
+		whereParts = append(whereParts, "type = :type")
+		namedArgs["type"] = filter.Type
+	}
+
+	if filter.StartDate > 0 {
+		whereParts = append(whereParts, "EXTRACT(EPOCH FROM created_at) >= :start_date")
+		namedArgs["start_date"] = filter.StartDate
+	}
+
+	if filter.EndDate > 0 {
+		whereParts = append(whereParts, "EXTRACT(EPOCH FROM created_at) <= :end_date")
+		namedArgs["end_date"] = filter.EndDate
+	}
+
+	if filter.Limit > 0 {
+		queryTempl += "LIMIT :limit\n"
+		namedArgs["limit"] = filter.Limit
+	}
+
+	if filter.Offset > 0 {
+		queryTempl += "OFFSET :offset\n"
+		namedArgs["offset"] = filter.Offset
+	}
+
+	where := strings.Join(whereParts, " AND ")
+	query := fmt.Sprintf(queryTempl, where)
+
+	query, args, err := sqlx.Named(query, namedArgs)
+	if err != nil {
+		return nil, fmt.Errorf("sqlx named: %w", err)
+	}
+
+	query = r.db.Rebind(query)
+
 	dbOperations := make([]Operation, 0)
-	err := r.db.Select(&dbOperations, query, walletName)
+	err = r.db.Select(&dbOperations, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("select for update: %w", err)
 	}
@@ -271,6 +314,7 @@ WHERE wallet = $1
 		operations[i].Type = dbOperations[i].Type
 		operations[i].Amount.SetAmount(dbOperations[i].Amount)
 		operations[i].OtherWallet = dbOperations[i].OtherWallet
+		operations[i].Timestamp = dbOperations[i].CreatedAt
 	}
 
 	return operations, nil

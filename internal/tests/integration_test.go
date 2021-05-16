@@ -64,7 +64,7 @@ func TestDepositWallet(t *testing.T) {
 	require.NotNil(t, wallet)
 	assert.EqualValues(t, testAmount.GetInt(), wallet.Balance)
 
-	operations, err := ts.repo.GetOperations(testWalletName)
+	operations, err := ts.repo.GetOperations(dto.OperationsFilter{Wallet: testWalletName})
 	require.NoError(t, err)
 	require.Len(t, operations, 1)
 	assert.Equal(t, testWalletName, operations[0].Wallet)

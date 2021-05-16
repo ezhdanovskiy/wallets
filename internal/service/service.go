@@ -86,3 +86,11 @@ func (s *Service) Transfer(transfer dto.Transfer) error {
 		return nil
 	})
 }
+
+func (s *Service) GetOperations(filter dto.OperationsFilter) ([]dto.Operation, error) {
+	operations, err := s.repo.GetOperations(filter)
+	if err != nil {
+		return nil, ErrDatabase.Wrap(err)
+	}
+	return operations, nil
+}

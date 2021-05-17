@@ -12,6 +12,11 @@ import (
 
 var ErrBodyDecode = httperr.New(http.StatusBadRequest, "failed to decode body")
 
+const (
+	LimitDefault = 20
+	LimitMax     = 1000
+)
+
 func (s *Server) createWallet(w http.ResponseWriter, r *http.Request) {
 	s.log.Debug("createWallet")
 
@@ -91,13 +96,19 @@ func (s *Server) getOperations(w http.ResponseWriter, r *http.Request) {
 		filter.EndDate = i
 	}
 
-	if limit := r.URL.Query().Get("limit"); limit != "" {
-		i, err := strconv.ParseInt(limit, 10, 64)
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		limit, err := strconv.ParseInt(limitStr, 10, 64)
 		if err != nil {
 			s.writeErrorResponse(w, httperr.Wrap(err, http.StatusBadRequest, "failed to parse limit"))
 			return
 		}
-		filter.Limit = i
+		if limit < 1 || limit > LimitMax {
+			s.writeErrorResponse(w, httperr.Wrap(err, http.StatusBadRequest, "wrong limit, it have to be in [1, 100]"))
+			return
+		}
+		filter.Limit = limit
+	} else {
+		filter.Limit = LimitDefault
 	}
 
 	if offset := r.URL.Query().Get("offset"); offset != "" {

@@ -1,0 +1,147 @@
+swagger: "2.0"
+info:
+  description: "Wallets API"
+  version: "1.0.0"
+  title: "Wallets"
+host: "localhost:8080"
+basePath: "/v1"
+schemes:
+  - "http"
+  - "https"
+paths:
+  /wallets:
+    post:
+      tags:
+        - "wallets"
+      summary: "Add wallet"
+      description: "Add wallet with unique name."
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Add wallet request"
+          required: true
+          schema:
+            $ref: "#/definitions/PostWalletRequest"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: object
+            default: null
+        "400":
+          description: "Invalid parameters"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        "500":
+          description: "Internal error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+  /operations:
+    get:
+      tags:
+        - "operations"
+      summary: "Get wallet operations"
+      description: "Get wallet operations using filter."
+      parameters:
+        - in: query
+          name: wallet
+          required: true
+          schema:
+            type: string
+          description: Wallet name
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Operation type (deposit/withdrawal)
+        - in: query
+          name: start_date
+          schema:
+            type: integer
+            format: timestamp
+          description: The start date for the report (in seconds)
+        - in: query
+          name: end_date
+          schema:
+            type: integer
+          description: The end date for the report (in seconds)
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: The number of operations to skip before starting to collect the result set
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 20
+          description: The numbers of operations to return
+        - in: query
+          name: format
+          schema:
+            type: string
+            default: json
+          description: Format of report (json/csv)
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/GetOperationsResponse"
+        "400":
+          description: "Invalid parameters"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        "500":
+          description: "Internal error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+definitions:
+  PostWalletRequest:
+    type: object
+    properties:
+      name:
+        type: string
+        example: wallet01
+  GetOperationsResponse:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          alerts:
+            type: array
+            items:
+              type: object
+              properties:
+                wallet:
+                  type: string
+                  example: wallet01
+                amount:
+                  type: integer
+                  format: float64
+                  example: 3000.05
+                type:
+                  type: string
+                  example: deposit
+                other_wallet:
+                  type: string
+                  example: system
+                timestamp:
+                  type: string
+                  example: 2021-05-16T19:43:03.953199Z
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: string
+        example: failed to decode body

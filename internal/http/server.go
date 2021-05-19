@@ -66,7 +66,7 @@ func (s *Server) GetV1ApiRouters() func(chi.Router) {
 		r.Post("/wallets", s.createWallet)
 		r.Post("/wallets/deposit", s.deposit)
 		r.Post("/wallets/transfer", s.transfer)
-		r.Get("/operations", s.getOperations)
+		r.Get("/wallets/operations", s.getOperations)
 	}
 }
 

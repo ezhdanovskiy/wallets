@@ -174,13 +174,13 @@ func TestGetOperations(t *testing.T) {
 	}
 
 	t.Run("empty parameters", func(t *testing.T) {
-		code, body := ts.doRequest(http.MethodGet, "/operations", nil)
+		code, body := ts.doRequest(http.MethodGet, "/wallets/operations", nil)
 		assert.Equal(t, http.StatusBadRequest, code)
 		assert.Contains(t, body, "empty wallet")
 	})
 
 	t.Run("all operations", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v", testWalletName01)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v", testWalletName01)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -188,7 +188,7 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("deposits only", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&type=%v", testWalletName01, repository.OperationTypeDeposit)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&type=%v", testWalletName01, repository.OperationTypeDeposit)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -197,7 +197,7 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("withdrawals only", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&type=%v", testWalletName01, repository.OperationTypeWithdrawal)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&type=%v", testWalletName01, repository.OperationTypeWithdrawal)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -206,7 +206,7 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("limit", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&limit=%v", testWalletName01, 1)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&limit=%v", testWalletName01, 1)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -215,7 +215,7 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("offset", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&offset=%v", testWalletName01, 1)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&offset=%v", testWalletName01, 1)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -224,7 +224,7 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("start_date in past", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&start_date=%v", testWalletName01, time.Now().Unix()-10)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&start_date=%v", testWalletName01, time.Now().Unix()-10)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -232,7 +232,7 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("start_date in future", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&start_date=%v", testWalletName01, time.Now().Unix()+10)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&start_date=%v", testWalletName01, time.Now().Unix()+10)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -240,7 +240,7 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("end_date in past", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&end_date=%v", testWalletName01, time.Now().Unix()-10)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&end_date=%v", testWalletName01, time.Now().Unix()-10)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
@@ -248,11 +248,18 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("end_date in future", func(t *testing.T) {
-		target := fmt.Sprintf("/operations?wallet=%v&end_date=%v", testWalletName01, time.Now().Unix()+10)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&end_date=%v", testWalletName01, time.Now().Unix()+10)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
 		require.Len(t, operations, 2)
+	})
+	t.Run("all operations csv", func(t *testing.T) {
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&format=csv", testWalletName01)
+		code, body := ts.doRequest(http.MethodGet, target, nil)
+		assert.Equal(t, http.StatusOK, code)
+		assert.Contains(t, body, fmt.Sprintf("%v,%v,%v", testWalletName01, testAmount01, repository.OperationTypeDeposit))
+		assert.Contains(t, body, fmt.Sprintf("%v,%v,%v", testWalletName01, testAmount02, repository.OperationTypeWithdrawal))
 	})
 
 	ts.cleanWallets(testWalletName01, testWalletName02)

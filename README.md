@@ -1,11 +1,34 @@
 # wallets
 
+## Components
+The application has two components:
+1. postgres - database.
+2. wallets - HTTP server.
 
----
-### links
-- https://www.api-money.com/docs/#nav-trx-p2p
-- https://bittrex.github.io/api/v3
-- https://binance-docs.github.io/apidocs/spot/en/#query-user-universal-transfer-history
-- https://docs.poloniex.com/#transferbalance
-- https://docs.kraken.com/rest/#operation/walletTransfer
-- https://api.hitbtc.com/#transfer-money-to-another-user-by-email-or-username
+### 1. postgres
+The database contains two tables `wallets` and `operations`.  
+
+### 2. wallets
+The wallets component can be run in multiple instances.  
+It serves four endpoints:
+- `POST /wallets` - Add wallet.
+- `POST wallets/deposit` - Top up wallet.
+- `POST /wallets/transfer` - Transfer money.
+- `GET /wallets/operations` - Get wallet operations.
+
+Read `api/v1/swagger.yaml` for details.
+
+## Packages
+- application - provides dependencies and runs application;
+- config - reads configuration from envs (viper);
+- dto - Data Transfer Objects;
+- http - HTTP server;
+- httperr - custom errors;
+- repository - client for DB (postgresql);
+- service - business logic;
+- tests - integration tests.
+
+Use go doc for details.
+```bash
+go doc internal/service
+```

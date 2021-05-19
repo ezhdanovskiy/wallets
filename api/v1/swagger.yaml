@@ -35,11 +35,77 @@ paths:
         "400":
           description: "Invalid parameters"
           schema:
-            $ref: "#/definitions/ErrorResponse"
+            $ref: "#/definitions/Error400Response"
         "500":
           description: "Internal error"
           schema:
-            $ref: "#/definitions/ErrorResponse"
+            $ref: "#/definitions/Error500Response"
+  /wallets/deposit:
+    post:
+      tags:
+        - "wallets"
+      summary: "Top up wallet"
+      description: "Increase the wallet balance by a certain amount."
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Wallet deposit request"
+          required: true
+          schema:
+            $ref: "#/definitions/WalletDepositRequest"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: object
+            default: null
+        "400":
+          description: "Invalid parameters"
+          schema:
+            $ref: "#/definitions/Error400Response"
+        "500":
+          description: "Internal error"
+          schema:
+            $ref: "#/definitions/Error500Response"
+  /wallets/transfer:
+    post:
+      tags:
+        - "wallets"
+      summary: "Transfer money"
+      description: "Transferring money from one wallet to another within the available balance."
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Transfer money request"
+          required: true
+          schema:
+            $ref: "#/definitions/TransferMoneyRequest"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: object
+            default: null
+        "400":
+          description: "Invalid parameters"
+          schema:
+            $ref: "#/definitions/Error400Response"
+        "422":
+          description: "Invalid parameters"
+          schema:
+            $ref: "#/definitions/Error422Response"
+        "500":
+          description: "Internal error"
+          schema:
+            $ref: "#/definitions/Error500Response"
   /operations:
     get:
       tags:
@@ -100,11 +166,11 @@ paths:
         "400":
           description: "Invalid parameters"
           schema:
-            $ref: "#/definitions/ErrorResponse"
+            $ref: "#/definitions/Error400Response"
         "500":
           description: "Internal error"
           schema:
-            $ref: "#/definitions/ErrorResponse"
+            $ref: "#/definitions/Error500Response"
 definitions:
   PostWalletRequest:
     type: object
@@ -112,6 +178,29 @@ definitions:
       name:
         type: string
         example: wallet01
+  WalletDepositRequest:
+    type: object
+    properties:
+      wallet:
+        type: string
+        example: wallet01
+      amount:
+        type: integer
+        format: float64
+        example: 3000.05
+  TransferMoneyRequest:
+    type: object
+    properties:
+      wallet_from:
+        type: string
+        example: wallet01
+      wallet_to:
+        type: string
+        example: wallet02
+      amount:
+        type: integer
+        format: float64
+        example: 3000.05
   GetOperationsResponse:
     type: object
     properties:
@@ -139,9 +228,21 @@ definitions:
                 timestamp:
                   type: string
                   example: 2021-05-16T19:43:03.953199Z
-  ErrorResponse:
+  Error400Response:
     type: object
     properties:
       error:
         type: string
         example: failed to decode body
+  Error422Response:
+    type: object
+    properties:
+      error:
+        type: string
+        example: not enough money
+  Error500Response:
+    type: object
+    properties:
+      error:
+        type: string
+        example: database error

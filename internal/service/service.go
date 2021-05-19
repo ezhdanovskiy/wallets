@@ -64,9 +64,9 @@ func (s *Service) Transfer(transfer dto.Transfer) error {
 				return httperr.New(http.StatusNotFound, "wallets not found")
 			}
 			if wallets[0].Name == transfer.WalletFrom {
-				return httperr.New(http.StatusNotFound, "wallet_to not found")
+				return httperr.New(http.StatusNotFound, "%s not found", transfer.WalletTo)
 			}
-			return httperr.New(http.StatusNotFound, "wallet_from not found")
+			return httperr.New(http.StatusNotFound, "%s not found", transfer.WalletFrom)
 		}
 
 		for _, w := range wallets {

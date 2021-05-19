@@ -106,10 +106,10 @@ paths:
           description: "Internal error"
           schema:
             $ref: "#/definitions/Error500Response"
-  /operations:
+  /wallets/operations:
     get:
       tags:
-        - "operations"
+        - "wallets"
       summary: "Get wallet operations"
       description: "Get wallet operations using filter."
       parameters:

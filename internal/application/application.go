@@ -2,7 +2,6 @@
 package application
 
 import (
-	"context"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -13,19 +12,16 @@ import (
 	"github.com/ezhdanovskiy/wallets/internal/service"
 )
 
-// Application contains all element of application.
+// Application contains all components of application.
 type Application struct {
 	log *zap.SugaredLogger
 	cfg *config.Config
 	svc *service.Service
 
 	httpServer *http.Server
-
-	ctx    context.Context
-	cancel context.CancelFunc
 }
 
-// NewApplication creates instance of Application with configured components.
+// NewApplication creates and connects instances of all components required to run Application.
 func NewApplication() (*Application, error) {
 	cfg, err := config.NewConfig()
 	if err != nil {
@@ -38,19 +34,17 @@ func NewApplication() (*Application, error) {
 	}
 	log.Debugf("cfg: %+v", cfg)
 
-	repo, err := repository.NewRepo(log, cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
+	repo, err := repository.NewRepo(log, cfg.DB)
 	if err != nil {
 		return nil, fmt.Errorf("new repo: %w", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	svc := service.NewService(log, repo)
 
 	return &Application{
-		log:    log,
-		cfg:    cfg,
-		svc:    service.NewService(log, repo),
-		ctx:    ctx,
-		cancel: cancel,
+		log: log,
+		cfg: cfg,
+		svc: svc,
 	}, nil
 }
 
@@ -73,9 +67,6 @@ func (a *Application) Run() error {
 
 // Stop terminates configured components.
 func (a *Application) Stop() {
-	if a.cancel != nil {
-		a.cancel()
-	}
 	if a.httpServer != nil {
 		a.log.Info("Stopping HTTP server")
 		a.httpServer.Shutdown()

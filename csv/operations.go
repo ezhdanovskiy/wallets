@@ -1,3 +1,4 @@
+// Package csv contains methods for generating csv.
 package csv
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/ezhdanovskiy/wallets/internal/dto"
 )
 
+// MarshalOperations operations to csv format.
 func MarshalOperations(operations []dto.Operation) ([]byte, error) {
 	var buf bytes.Buffer
 	csvWriter := csv.NewWriter(&buf)

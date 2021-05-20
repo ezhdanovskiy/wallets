@@ -10,6 +10,8 @@ CREATE TABLE "operations"
     "created_at"   timestamptz    NOT NULL DEFAULT now()
 );
 
+CREATE INDEX ON "operations" ("wallet", "type", "created_at");
+
 /*
 INSERT INTO operations (wallet, type, amount)
 VALUES ('wallet01', 'deposit', 100000),

@@ -1,5 +1,6 @@
 package dto
 
+// Amount represents amount of money and allows to convert it to and from int format.
 type Amount float64
 
 func (a Amount) GetInt() uint64 {

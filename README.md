@@ -7,12 +7,16 @@ The application has two components:
 
 ### 1. postgres
 The database contains two tables `wallets` and `operations`.  
+- `wallets` contains wallet name and balance.
+- `operations` contains deposit and withdrawal operations.  
+
+Read `migrations` for details.
 
 ### 2. wallets
 The wallets component can be run in multiple instances.  
 It serves four endpoints:
 - `POST /wallets` - Add wallet.
-- `POST wallets/deposit` - Top up wallet.
+- `POST /wallets/deposit` - Top up wallet.
 - `POST /wallets/transfer` - Transfer money.
 - `GET /wallets/operations` - Get wallet operations.
 

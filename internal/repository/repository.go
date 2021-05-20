@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ezhdanovskiy/wallets/internal/config"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -27,16 +28,17 @@ const (
 	SystemWalletName        = "system"
 )
 
-func NewRepo(logger *zap.SugaredLogger, host string, port int, user, password, dbname string) (*Repo, error) {
+// NewRepo creates instance of repository using config and applies migrations.
+func NewRepo(logger *zap.SugaredLogger, cfg config.DB) (*Repo, error) {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName)
 
 	db, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("connect database: %w", err)
 	}
 
-	err = MigrateUp(logger, db, "file://migrations")
+	err = MigrateUp(logger, db, "file://"+cfg.MigrationsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +46,7 @@ func NewRepo(logger *zap.SugaredLogger, host string, port int, user, password, d
 	return NewRepoWithDB(logger, db)
 }
 
+// MigrateUp applies migrations to DB.
 func MigrateUp(logger *zap.SugaredLogger, db *sqlx.DB, path string) error {
 	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 	m, err := migrate.NewWithDatabaseInstance(path, "postgres", driver)
@@ -65,6 +68,7 @@ func MigrateUp(logger *zap.SugaredLogger, db *sqlx.DB, path string) error {
 	return nil
 }
 
+// NewRepoWithDB creates instance of repository using existing DB.
 func NewRepoWithDB(logger *zap.SugaredLogger, db *sqlx.DB) (*Repo, error) {
 	return &Repo{
 		log: logger,
@@ -72,6 +76,8 @@ func NewRepoWithDB(logger *zap.SugaredLogger, db *sqlx.DB) (*Repo, error) {
 	}, nil
 }
 
+// CreateWallet creates new wallet with unique name,
+// or do nothing if wallet already exists.
 func (r *Repo) CreateWallet(walletName string) error {
 	r.log.With("wallet", walletName).Debug("CreateWallet")
 	const query = `
@@ -88,6 +94,7 @@ ON CONFLICT DO NOTHING
 	return nil
 }
 
+// GetWallet selects wallet by name.
 func (r *Repo) GetWallet(walletName string) (*dto.Wallet, error) {
 	r.log.With("wallet", walletName).Debug("GetWallet")
 	const query = `
@@ -111,6 +118,9 @@ WHERE name = $1
 	}, nil
 }
 
+// IncreaseWalletBalance runs two operations in transaction:
+// - increases wallet balance;
+// - add new operation with type deposit.
 func (r *Repo) IncreaseWalletBalance(walletName string, amount uint64) error {
 	r.log.With("wallet_name", walletName, "amount", amount).Debug("IncreaseWalletBalance")
 
@@ -124,6 +134,7 @@ func (r *Repo) IncreaseWalletBalance(walletName string, amount uint64) error {
 	})
 }
 
+// RunWithTransaction runs the given function inside a transaction.
 func (r *Repo) RunWithTransaction(f func(tx *sqlx.Tx) error) error {
 	r.log.Debug("RunWithTransaction")
 
@@ -147,6 +158,8 @@ func (r *Repo) RunWithTransaction(f func(tx *sqlx.Tx) error) error {
 	return nil
 }
 
+// GetWalletsForUpdateTx selects wallets and obtains a lock for them at the database level using transaction.
+// It will wait if some of the required wallets already locked in another goroutine.
 func (r *Repo) GetWalletsForUpdateTx(tx *sqlx.Tx, walletNames []string) ([]dto.Wallet, error) {
 	r.log.With("wallets", walletNames).Debug("GetWalletsForUpdateTx")
 
@@ -177,6 +190,11 @@ FOR UPDATE
 	return wallets, nil
 }
 
+// TransferTx runs four operations using transaction:
+// - decreases balance of wallet_from if there is enough money;
+// - add new operation with type withdrawal for wallet_from;
+// - increases balance of wallet_to;
+// - add new operation with type deposit for wallet_to.
 func (r *Repo) TransferTx(tx *sqlx.Tx, walletFrom, walletTo string, amount uint64) error {
 	r.log.With("wallet_from", walletFrom, "wallet_to", walletTo, "amount", amount).Debug("TransferTx")
 
@@ -251,6 +269,8 @@ VALUES ($1, $2, $3, $4)
 	return nil
 }
 
+// GetOperations selects operations for specified wallet using filter.
+// Operations ordered by time.
 func (r *Repo) GetOperations(filter dto.OperationsFilter) ([]dto.Operation, error) {
 	r.log.With("wallet", filter.Wallet).Debug("GetOperations")
 
@@ -302,6 +322,7 @@ ORDER BY created_at
 
 	query = r.db.Rebind(query)
 
+	r.log.With("query", query, "args", args).Debug("select operations")
 	dbOperations := make([]Operation, 0)
 	err = r.db.Select(&dbOperations, query, args...)
 	if err != nil {

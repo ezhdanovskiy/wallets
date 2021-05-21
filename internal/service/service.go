@@ -17,7 +17,12 @@ type Service struct {
 	repo Repository
 }
 
-var ErrDatabase = httperr.New(http.StatusInternalServerError, "database error")
+var (
+	ErrEmptyWalletName   = httperr.New(http.StatusBadRequest, "empty wallet name")
+	ErrWalletNotFound    = httperr.New(http.StatusBadRequest, "wallet not found")
+	ErrNotPositiveAmount = httperr.New(http.StatusBadRequest, "amount must be positive")
+	ErrDatabase          = httperr.New(http.StatusInternalServerError, "database error")
+)
 
 func NewService(logger *zap.SugaredLogger, repo Repository) *Service {
 	return &Service{
@@ -28,6 +33,10 @@ func NewService(logger *zap.SugaredLogger, repo Repository) *Service {
 
 // CreateWallet creates new wallet.
 func (s *Service) CreateWallet(wallet dto.CreateWalletRequest) error {
+	if wallet.Name == "" {
+		return ErrEmptyWalletName
+	}
+
 	err := s.repo.CreateWallet(wallet.Name)
 	if err != nil {
 		return ErrDatabase.Wrap(err)
@@ -37,12 +46,20 @@ func (s *Service) CreateWallet(wallet dto.CreateWalletRequest) error {
 
 // IncreaseWalletBalance increases wallet balance.
 func (s *Service) IncreaseWalletBalance(deposit dto.Deposit) error {
+	if deposit.Wallet == "" {
+		return ErrEmptyWalletName
+	}
+
+	if deposit.Amount <= 0 {
+		return ErrNotPositiveAmount
+	}
+
 	wallet, err := s.repo.GetWallet(deposit.Wallet)
 	if err != nil {
 		return ErrDatabase.Wrap(err)
 	}
 	if wallet == nil {
-		return httperr.Wrap(err, http.StatusNotFound, "wallet not found")
+		return ErrWalletNotFound
 	}
 
 	err = s.repo.IncreaseWalletBalance(deposit.Wallet, deposit.Amount.GetInt())

@@ -10,7 +10,11 @@ The database contains two tables `wallets` and `operations`.
 - `wallets` contains wallet name and balance.
 - `operations` contains deposit and withdrawal operations.  
 
-Read `migrations` for details.
+Read `migrations` for details.  
+
+I decided to use `sql.LevelSerializable` for transactions. 
+This simplifies life on the stage of development.
+In the future it will be possible to try to optimize.
 
 ### 2. wallets
 The wallets component can be run in multiple instances.  

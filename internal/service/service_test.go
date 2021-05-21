@@ -2,7 +2,6 @@ package service
 
 import (
 	"database/sql"
-	"net/http"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -33,6 +32,20 @@ func TestService_CreateWallet(t *testing.T) {
 		req := dto.CreateWalletRequest{Name: testWalletName}
 		err := ts.svc.CreateWallet(req)
 		require.NoError(t, err)
+	})
+
+	t.Run("empty wallet name", func(t *testing.T) {
+		ts := newTestService(t)
+		defer ts.Finish()
+
+		req := dto.CreateWalletRequest{Name: ""}
+		err := ts.svc.CreateWallet(req)
+		require.Error(t, err)
+		e, ok := err.(*httperr.Error)
+		require.True(t, ok)
+		assert.Nil(t, e.Err)
+		assert.Equal(t, ErrEmptyWalletName.StatusCode, e.StatusCode)
+		assert.Equal(t, ErrEmptyWalletName.Message, e.Message)
 	})
 
 	t.Run("database connection error", func(t *testing.T) {
@@ -74,6 +87,40 @@ func TestService_IncreaseWalletBalance(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("empty wallet name", func(t *testing.T) {
+		ts := newTestService(t)
+		defer ts.Finish()
+
+		deposit := dto.Deposit{
+			Wallet: "",
+			Amount: testAmount,
+		}
+		err := ts.svc.IncreaseWalletBalance(deposit)
+		require.Error(t, err)
+		e, ok := err.(*httperr.Error)
+		require.True(t, ok)
+		assert.Nil(t, e.Err)
+		assert.Equal(t, ErrEmptyWalletName.StatusCode, e.StatusCode)
+		assert.Equal(t, ErrEmptyWalletName.Message, e.Message)
+	})
+
+	t.Run("empty wallet name", func(t *testing.T) {
+		ts := newTestService(t)
+		defer ts.Finish()
+
+		deposit := dto.Deposit{
+			Wallet: testWalletName,
+			Amount: -1,
+		}
+		err := ts.svc.IncreaseWalletBalance(deposit)
+		require.Error(t, err)
+		e, ok := err.(*httperr.Error)
+		require.True(t, ok)
+		assert.Nil(t, e.Err)
+		assert.Equal(t, ErrNotPositiveAmount.StatusCode, e.StatusCode)
+		assert.Equal(t, ErrNotPositiveAmount.Message, e.Message)
+	})
+
 	t.Run("database connection error", func(t *testing.T) {
 		ts := newTestService(t)
 		defer ts.Finish()
@@ -110,8 +157,8 @@ func TestService_IncreaseWalletBalance(t *testing.T) {
 		e, ok := err.(*httperr.Error)
 		require.True(t, ok)
 		assert.Nil(t, e.Err)
-		assert.Equal(t, http.StatusNotFound, e.StatusCode)
-		assert.Equal(t, "wallet not found", e.Message)
+		assert.Equal(t, ErrWalletNotFound.StatusCode, e.StatusCode)
+		assert.Equal(t, ErrWalletNotFound.Message, e.Message)
 	})
 }
 

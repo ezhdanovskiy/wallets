@@ -2,6 +2,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -138,7 +139,7 @@ func (r *Repo) IncreaseWalletBalance(walletName string, amount uint64) error {
 func (r *Repo) RunWithTransaction(f func(tx *sqlx.Tx) error) error {
 	r.log.Debug("RunWithTransaction")
 
-	tx, err := r.db.Beginx()
+	tx, err := r.db.BeginTxx(context.Background(), &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -225,13 +226,22 @@ func (r *Repo) decreaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount ui
 	r.log.With("wallet", walletName, "amount", amount).Debug("decreaseWalletBalanceTx")
 	const query = `
 UPDATE wallets
-SET balance = balance - $2
+SET balance = balance - $2, updated_at = now()
 WHERE name = $1 AND balance >= $2
 `
 
-	_, err := tx.Exec(query, walletName, amount)
+	res, err := tx.Exec(query, walletName, amount)
 	if err != nil {
 		return fmt.Errorf("update wallets: %w", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("rows affected: %w", err)
+	}
+
+	if rowsAffected != 1 {
+		return fmt.Errorf("%s balance can't be decreased on this amount", walletName)
 	}
 
 	return nil
@@ -241,7 +251,7 @@ func (r *Repo) increaseWalletBalanceTx(tx *sqlx.Tx, walletName string, amount ui
 	r.log.With("wallet", walletName, "amount", amount).Debug("increaseWalletBalanceTx")
 	const query = `
 UPDATE wallets
-SET balance = balance + $2
+SET balance = balance + $2, updated_at = now()
 WHERE name = $1
 `
 

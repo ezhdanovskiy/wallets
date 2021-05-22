@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	"github.com/ezhdanovskiy/wallets/internal/consts"
 	"github.com/ezhdanovskiy/wallets/internal/dto"
 	httpsrv "github.com/ezhdanovskiy/wallets/internal/http"
 	"github.com/ezhdanovskiy/wallets/internal/repository"
@@ -72,9 +73,9 @@ func TestDeposit(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, operations, 1)
 	assert.Equal(t, testWalletName, operations[0].Wallet)
-	assert.Equal(t, repository.OperationTypeDeposit, operations[0].Type)
+	assert.Equal(t, consts.OperationTypeDeposit, operations[0].Type)
 	assert.Equal(t, testAmount, operations[0].Amount)
-	assert.Equal(t, repository.SystemWalletName, operations[0].OtherWallet)
+	assert.Equal(t, consts.SystemWalletName, operations[0].OtherWallet)
 
 	ts.cleanWallets(testWalletName)
 }
@@ -127,11 +128,11 @@ func TestTransfer(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, operations, 2)
 		assert.Equal(t, testWalletName01, operations[0].Wallet)
-		assert.Equal(t, repository.OperationTypeDeposit, operations[0].Type)
+		assert.Equal(t, consts.OperationTypeDeposit, operations[0].Type)
 		assert.Equal(t, testAmount, operations[0].Amount)
-		assert.Equal(t, repository.SystemWalletName, operations[0].OtherWallet)
+		assert.Equal(t, consts.SystemWalletName, operations[0].OtherWallet)
 		assert.Equal(t, testWalletName01, operations[1].Wallet)
-		assert.Equal(t, repository.OperationTypeWithdrawal, operations[1].Type)
+		assert.Equal(t, consts.OperationTypeWithdrawal, operations[1].Type)
 		assert.Equal(t, testAmount, operations[1].Amount)
 		assert.Equal(t, testWalletName02, operations[1].OtherWallet)
 
@@ -139,7 +140,7 @@ func TestTransfer(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, operations, 1)
 		assert.Equal(t, testWalletName02, operations[0].Wallet)
-		assert.Equal(t, repository.OperationTypeDeposit, operations[0].Type)
+		assert.Equal(t, consts.OperationTypeDeposit, operations[0].Type)
 		assert.Equal(t, testAmount, operations[0].Amount)
 		assert.Equal(t, testWalletName01, operations[0].OtherWallet)
 	})
@@ -188,21 +189,21 @@ func TestGetOperations(t *testing.T) {
 	})
 
 	t.Run("deposits only", func(t *testing.T) {
-		target := fmt.Sprintf("/wallets/operations?wallet=%v&type=%v", testWalletName01, repository.OperationTypeDeposit)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&type=%v", testWalletName01, consts.OperationTypeDeposit)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
 		require.Len(t, operations, 1)
-		assert.Equal(t, repository.OperationTypeDeposit, operations[0].Type)
+		assert.Equal(t, consts.OperationTypeDeposit, operations[0].Type)
 	})
 
 	t.Run("withdrawals only", func(t *testing.T) {
-		target := fmt.Sprintf("/wallets/operations?wallet=%v&type=%v", testWalletName01, repository.OperationTypeWithdrawal)
+		target := fmt.Sprintf("/wallets/operations?wallet=%v&type=%v", testWalletName01, consts.OperationTypeWithdrawal)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
 		require.Len(t, operations, 1)
-		assert.Equal(t, repository.OperationTypeWithdrawal, operations[0].Type)
+		assert.Equal(t, consts.OperationTypeWithdrawal, operations[0].Type)
 	})
 
 	t.Run("limit", func(t *testing.T) {
@@ -211,7 +212,7 @@ func TestGetOperations(t *testing.T) {
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
 		require.Len(t, operations, 1)
-		assert.Equal(t, repository.OperationTypeDeposit, operations[0].Type, "operations sorted by timestamp")
+		assert.Equal(t, consts.OperationTypeDeposit, operations[0].Type, "operations sorted by timestamp")
 	})
 
 	t.Run("offset", func(t *testing.T) {
@@ -220,7 +221,7 @@ func TestGetOperations(t *testing.T) {
 		assert.Equal(t, http.StatusOK, code)
 		operations := unmarshalOperations(body)
 		require.Len(t, operations, 1)
-		assert.Equal(t, repository.OperationTypeWithdrawal, operations[0].Type, "operations sorted by timestamp")
+		assert.Equal(t, consts.OperationTypeWithdrawal, operations[0].Type, "operations sorted by timestamp")
 	})
 
 	t.Run("start_date in past", func(t *testing.T) {
@@ -258,8 +259,8 @@ func TestGetOperations(t *testing.T) {
 		target := fmt.Sprintf("/wallets/operations?wallet=%v&format=csv", testWalletName01)
 		code, body := ts.doRequest(http.MethodGet, target, nil)
 		assert.Equal(t, http.StatusOK, code)
-		assert.Contains(t, body, fmt.Sprintf("%v,%v,%v", testWalletName01, testAmount01, repository.OperationTypeDeposit))
-		assert.Contains(t, body, fmt.Sprintf("%v,%v,%v", testWalletName01, testAmount02, repository.OperationTypeWithdrawal))
+		assert.Contains(t, body, fmt.Sprintf("%v,%v,%v", testWalletName01, testAmount01, consts.OperationTypeDeposit))
+		assert.Contains(t, body, fmt.Sprintf("%v,%v,%v", testWalletName01, testAmount02, consts.OperationTypeWithdrawal))
 	})
 
 	ts.cleanWallets(testWalletName01, testWalletName02)

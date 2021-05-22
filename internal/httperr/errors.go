@@ -17,19 +17,19 @@ func New(statusCode int, format string, a ...interface{}) *Error {
 	}
 }
 
-func (e *Error) Error() string {
-	if e == nil {
-		return ""
-	}
+func (e Error) Error() string {
 	if e.Err != nil {
 		return fmt.Sprintf("%s: %v", e.Message, e.Err.Error())
 	}
 	return e.Message
 }
 
-func (e *Error) Wrap(err error) *Error {
-	e.Err = err
-	return e
+func (e Error) Wrap(err error) *Error {
+	return &Error{
+		Message:    e.Message,
+		StatusCode: e.StatusCode,
+		Err:        err,
+	}
 }
 
 func Wrap(err error, statusCode int, format string, a ...interface{}) *Error {

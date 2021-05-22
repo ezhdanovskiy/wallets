@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ezhdanovskiy/wallets/internal/config"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -15,6 +14,8 @@ import (
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 
+	"github.com/ezhdanovskiy/wallets/internal/config"
+	"github.com/ezhdanovskiy/wallets/internal/consts"
 	"github.com/ezhdanovskiy/wallets/internal/dto"
 )
 
@@ -22,12 +23,6 @@ type Repo struct {
 	log *zap.SugaredLogger
 	db  *sqlx.DB
 }
-
-const (
-	OperationTypeDeposit    = "deposit"
-	OperationTypeWithdrawal = "withdrawal"
-	SystemWalletName        = "system"
-)
 
 // NewRepo creates instance of repository using config and applies migrations.
 func NewRepo(logger *zap.SugaredLogger, cfg config.DB) (*Repo, error) {
@@ -131,7 +126,7 @@ func (r *Repo) IncreaseWalletBalance(walletName string, amount uint64) error {
 			return err
 		}
 
-		return r.insertOperation(tx, walletName, OperationTypeDeposit, amount, SystemWalletName)
+		return r.insertOperation(tx, walletName, consts.OperationTypeDeposit, amount, consts.SystemWalletName)
 	})
 }
 
@@ -204,7 +199,7 @@ func (r *Repo) TransferTx(tx *sqlx.Tx, walletFrom, walletTo string, amount uint6
 		return fmt.Errorf("decrease wallet balance: %w", err)
 	}
 
-	err = r.insertOperation(tx, walletFrom, OperationTypeWithdrawal, amount, walletTo)
+	err = r.insertOperation(tx, walletFrom, consts.OperationTypeWithdrawal, amount, walletTo)
 	if err != nil {
 		return fmt.Errorf("insert operation: %w", err)
 	}
@@ -214,7 +209,7 @@ func (r *Repo) TransferTx(tx *sqlx.Tx, walletFrom, walletTo string, amount uint6
 		return fmt.Errorf("increase wallet balance: %w", err)
 	}
 
-	err = r.insertOperation(tx, walletTo, OperationTypeDeposit, amount, walletFrom)
+	err = r.insertOperation(tx, walletTo, consts.OperationTypeDeposit, amount, walletFrom)
 	if err != nil {
 		return fmt.Errorf("insert operation: %w", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 
+	"github.com/ezhdanovskiy/wallets/internal/consts"
 	"github.com/ezhdanovskiy/wallets/internal/dto"
 	"github.com/ezhdanovskiy/wallets/internal/httperr"
 )
@@ -18,10 +19,18 @@ type Service struct {
 }
 
 var (
-	ErrEmptyWalletName   = httperr.New(http.StatusBadRequest, "empty wallet name")
-	ErrWalletNotFound    = httperr.New(http.StatusBadRequest, "wallet not found")
-	ErrNotPositiveAmount = httperr.New(http.StatusBadRequest, "amount must be positive")
-	ErrDatabase          = httperr.New(http.StatusInternalServerError, "database error")
+	ErrDatabase                 = httperr.New(http.StatusInternalServerError, "database error")
+	ErrEmptyWalletFrom          = httperr.New(http.StatusBadRequest, "empty wallet_from")
+	ErrEmptyWalletName          = httperr.New(http.StatusBadRequest, "empty wallet name")
+	ErrEmptyWalletTo            = httperr.New(http.StatusBadRequest, "empty wallet_to")
+	ErrSameWallets              = httperr.New(http.StatusBadRequest, "same wallets")
+	ErrNegativeEndDate          = httperr.New(http.StatusBadRequest, "end_date can't be negative")
+	ErrNegativeOffset           = httperr.New(http.StatusBadRequest, "offset can't be negative")
+	ErrNegativeStartDate        = httperr.New(http.StatusBadRequest, "start_date can't be negative")
+	ErrNotPositiveAmount        = httperr.New(http.StatusBadRequest, "amount must be positive")
+	ErrNotPositiveLimit         = httperr.New(http.StatusBadRequest, "limit must be positive")
+	ErrUnsupportedOperationType = httperr.New(http.StatusBadRequest, "unsupported operation type")
+	ErrWalletNotFound           = httperr.New(http.StatusBadRequest, "wallet not found")
 )
 
 func NewService(logger *zap.SugaredLogger, repo Repository) *Service {
@@ -49,7 +58,6 @@ func (s *Service) IncreaseWalletBalance(deposit dto.Deposit) error {
 	if deposit.Wallet == "" {
 		return ErrEmptyWalletName
 	}
-
 	if deposit.Amount <= 0 {
 		return ErrNotPositiveAmount
 	}
@@ -70,6 +78,19 @@ func (s *Service) IncreaseWalletBalance(deposit dto.Deposit) error {
 }
 
 func (s *Service) Transfer(transfer dto.Transfer) error {
+	if transfer.WalletFrom == "" {
+		return ErrEmptyWalletFrom
+	}
+	if transfer.WalletTo == "" {
+		return ErrEmptyWalletTo
+	}
+	if transfer.WalletFrom == transfer.WalletTo {
+		return ErrSameWallets
+	}
+	if transfer.Amount <= 0 {
+		return ErrNotPositiveAmount
+	}
+
 	return s.repo.RunWithTransaction(func(tx *sqlx.Tx) error {
 		wallets, err := s.repo.GetWalletsForUpdateTx(tx, []string{transfer.WalletFrom, transfer.WalletTo})
 		if err != nil {
@@ -105,6 +126,28 @@ func (s *Service) Transfer(transfer dto.Transfer) error {
 }
 
 func (s *Service) GetOperations(filter dto.OperationsFilter) ([]dto.Operation, error) {
+	if filter.Wallet == "" {
+		return nil, ErrEmptyWalletName
+	}
+	if filter.Type != "" && filter.Type != consts.OperationTypeDeposit && filter.Type != consts.OperationTypeWithdrawal {
+		return nil, ErrUnsupportedOperationType
+	}
+	if filter.StartDate < 0 {
+		return nil, ErrNegativeStartDate
+	}
+	if filter.EndDate < 0 {
+		return nil, ErrNegativeEndDate
+	}
+	if filter.Limit < 0 {
+		return nil, ErrNotPositiveLimit
+	}
+	if filter.Limit == 0 {
+		filter.Limit = consts.DefaultOperationsLimit
+	}
+	if filter.Offset < 0 {
+		return nil, ErrNegativeOffset
+	}
+
 	operations, err := s.repo.GetOperations(filter)
 	if err != nil {
 		return nil, ErrDatabase.Wrap(err)

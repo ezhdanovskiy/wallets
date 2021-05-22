@@ -5,5 +5,7 @@ const (
 	OperationTypeDeposit    = "deposit"
 	OperationTypeWithdrawal = "withdrawal"
 	SystemWalletName        = "system"
-	DefaultOperationsLimit  = 20
+
+	OperationsLimitDefault = 20
+	OperationsLimitMax     = 1000
 )

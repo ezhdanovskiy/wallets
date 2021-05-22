@@ -95,6 +95,12 @@ func TestTransfer(t *testing.T) {
 	require.NoError(t, ts.repo.IncreaseWalletBalance(testWalletName01, testAmount.GetInt()))
 	require.NoError(t, ts.repo.CreateWallet(testWalletName02))
 
+	t.Run("failed to decode body", func(t *testing.T) {
+		code, body := ts.doRequest(http.MethodPost, "/wallets/transfer", "}")
+		assert.Equal(t, http.StatusBadRequest, code)
+		assert.Contains(t, body, httpsrv.ErrBodyDecode.Message)
+	})
+
 	t.Run("not enough money", func(t *testing.T) {
 		code, body := ts.doRequest(http.MethodPost, "/wallets/transfer", dto.Transfer{
 			WalletFrom: testWalletName02,

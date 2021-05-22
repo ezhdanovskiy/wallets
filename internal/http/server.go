@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
-	"github.com/ezhdanovskiy/wallets/internal/dto"
 	"github.com/ezhdanovskiy/wallets/internal/httperr"
 )
 
@@ -21,13 +20,6 @@ type Server struct {
 	httpPort   int
 	httpServer *http.Server
 	svc        Service
-}
-
-type Service interface {
-	CreateWallet(dto.CreateWalletRequest) error
-	IncreaseWalletBalance(dto.Deposit) error
-	Transfer(dto.Transfer) error
-	GetOperations(dto.OperationsFilter) ([]dto.Operation, error)
 }
 
 func NewServer(logger *zap.SugaredLogger, httpPort int, svc Service) *Server {

@@ -268,7 +268,7 @@ func TestService_GetOperations(t *testing.T) {
 
 		ts.mockRepo.EXPECT().GetOperations(dto.OperationsFilter{
 			Wallet: testWalletName01,
-			Limit:  consts.DefaultOperationsLimit,
+			Limit:  consts.OperationsLimitDefault,
 		}).
 			Return(nil, sql.ErrConnDone)
 
@@ -285,7 +285,7 @@ func TestService_GetOperations(t *testing.T) {
 
 		ts.mockRepo.EXPECT().GetOperations(dto.OperationsFilter{
 			Wallet: testWalletName01,
-			Limit:  consts.DefaultOperationsLimit,
+			Limit:  consts.OperationsLimitDefault,
 		}).
 			Return([]dto.Operation{{
 				Wallet: testWalletName01,

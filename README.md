@@ -27,13 +27,14 @@ It serves four endpoints:
 Read `api/v1/swagger.yaml` for details.
 
 ## Packages
-- application - provides dependencies and runs application;
+- application - creates dependencies and runs application;
 - config - reads configuration from envs (viper);
 - consts - application constants;
+- csv - methods for generating csv;
 - dto - data transfer objects;
 - http - HTTP server;
 - httperr - custom errors;
-- repository - client for database;
+- repository - works with database;
 - service - business logic;
 - tests - integration tests.
 

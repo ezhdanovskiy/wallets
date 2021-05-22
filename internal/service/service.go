@@ -19,22 +19,7 @@ type Service struct {
 	repo Repository
 }
 
-var (
-	ErrDatabase                 = httperr.New(http.StatusInternalServerError, "database error")
-	ErrEmptyWalletFrom          = httperr.New(http.StatusBadRequest, "empty wallet_from")
-	ErrEmptyWalletName          = httperr.New(http.StatusBadRequest, "empty wallet name")
-	ErrEmptyWalletTo            = httperr.New(http.StatusBadRequest, "empty wallet_to")
-	ErrSameWallets              = httperr.New(http.StatusBadRequest, "same wallets")
-	ErrNegativeEndDate          = httperr.New(http.StatusBadRequest, "end_date can't be negative")
-	ErrNegativeOffset           = httperr.New(http.StatusBadRequest, "offset can't be negative")
-	ErrNegativeStartDate        = httperr.New(http.StatusBadRequest, "start_date can't be negative")
-	ErrNotPositiveAmount        = httperr.New(http.StatusBadRequest, "amount must be positive")
-	ErrNotPositiveLimit         = httperr.New(http.StatusBadRequest, "limit must be positive")
-	ErrUnsupportedOperationType = httperr.New(http.StatusBadRequest, "unsupported operation type")
-	ErrWalletNotFound           = httperr.New(http.StatusBadRequest, "wallet not found")
-)
-
-// NewService creates instance of service.
+// NewService creates a service instance.
 func NewService(logger *zap.SugaredLogger, repo Repository) *Service {
 	return &Service{
 		log:  logger,
@@ -146,7 +131,7 @@ func (s *Service) GetOperations(filter dto.OperationsFilter) ([]dto.Operation, e
 		return nil, ErrNotPositiveLimit
 	}
 	if filter.Limit == 0 {
-		filter.Limit = consts.DefaultOperationsLimit
+		filter.Limit = consts.OperationsLimitDefault
 	}
 	if filter.Offset < 0 {
 		return nil, ErrNegativeOffset

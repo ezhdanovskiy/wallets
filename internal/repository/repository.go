@@ -19,6 +19,7 @@ import (
 	"github.com/ezhdanovskiy/wallets/internal/dto"
 )
 
+// Repo performs database operations.
 type Repo struct {
 	log *zap.SugaredLogger
 	db  *sqlx.DB
@@ -115,8 +116,8 @@ WHERE name = $1
 }
 
 // IncreaseWalletBalance runs two operations in transaction:
-// - increases wallet balance;
-// - add new operation with type deposit.
+// 	- increases wallet balance;
+// 	- add new operation with type deposit.
 func (r *Repo) IncreaseWalletBalance(walletName string, amount uint64) error {
 	r.log.With("wallet_name", walletName, "amount", amount).Debug("IncreaseWalletBalance")
 
@@ -187,10 +188,10 @@ FOR UPDATE
 }
 
 // TransferTx runs four operations using transaction:
-// - decreases balance of wallet_from if there is enough money;
-// - add new operation with type withdrawal for wallet_from;
-// - increases balance of wallet_to;
-// - add new operation with type deposit for wallet_to.
+// 	- decreases balance of wallet_from if there is enough money;
+// 	- add new operation with type withdrawal for wallet_from;
+// 	- increases balance of wallet_to;
+// 	- add new operation with type deposit for wallet_to.
 func (r *Repo) TransferTx(tx *sqlx.Tx, walletFrom, walletTo string, amount uint64) error {
 	r.log.With("wallet_from", walletFrom, "wallet_to", walletTo, "amount", amount).Debug("TransferTx")
 

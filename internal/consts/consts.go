@@ -1,3 +1,4 @@
+// Package consts contains application constants.
 package consts
 
 const (

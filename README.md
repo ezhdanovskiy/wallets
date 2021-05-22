@@ -30,10 +30,10 @@ Read `api/v1/swagger.yaml` for details.
 - application - provides dependencies and runs application;
 - config - reads configuration from envs (viper);
 - consts - application constants;
-- dto - Data Transfer Objects;
+- dto - data transfer objects;
 - http - HTTP server;
 - httperr - custom errors;
-- repository - client for DB (postgresql);
+- repository - client for database;
 - service - business logic;
 - tests - integration tests.
 

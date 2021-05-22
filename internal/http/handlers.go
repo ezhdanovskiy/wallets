@@ -127,7 +127,7 @@ func (s *Server) getOperations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Query().Get("format") == "csv" {
-		data, err := csv.MarshalOperations(operations)
+		data, err := csv.ConvertOperations(operations)
 		if err != nil {
 			s.writeErrorResponse(w, err)
 			return

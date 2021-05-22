@@ -1,3 +1,4 @@
+// Package dto contains data transfer objects.
 package dto
 
 // Amount represents amount of money and allows to convert it to and from int format.

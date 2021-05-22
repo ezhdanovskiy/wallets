@@ -13,6 +13,7 @@ import (
 	"github.com/ezhdanovskiy/wallets/internal/httperr"
 )
 
+// Service implements the business logic for wallets application.
 type Service struct {
 	log  *zap.SugaredLogger
 	repo Repository
@@ -33,6 +34,7 @@ var (
 	ErrWalletNotFound           = httperr.New(http.StatusBadRequest, "wallet not found")
 )
 
+// NewService creates instance of service.
 func NewService(logger *zap.SugaredLogger, repo Repository) *Service {
 	return &Service{
 		log:  logger,
@@ -77,6 +79,7 @@ func (s *Service) IncreaseWalletBalance(deposit dto.Deposit) error {
 	return nil
 }
 
+// Transfer transfers money from one wallet to another.
 func (s *Service) Transfer(transfer dto.Transfer) error {
 	if transfer.WalletFrom == "" {
 		return ErrEmptyWalletFrom
@@ -125,6 +128,7 @@ func (s *Service) Transfer(transfer dto.Transfer) error {
 	})
 }
 
+// GetOperations provides operations for the specified wallet according to filtering parameters.
 func (s *Service) GetOperations(filter dto.OperationsFilter) ([]dto.Operation, error) {
 	if filter.Wallet == "" {
 		return nil, ErrEmptyWalletName

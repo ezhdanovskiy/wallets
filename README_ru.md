@@ -108,7 +108,7 @@ make build/docker
 ├── go.sum
 ├── Makefile
 ├── README.md                    # Документация на английском
-└── README_ru.md                 # Этот файл (русская версия)
+└── README_ru.md                 # Данный файл (русская версия)
 ```
 
 ## Архитектура
@@ -243,7 +243,7 @@ go test -run TestServiceTransfer ./internal/service
 ## Документация
 
 - [README.md](README.md) - Документация на английском языке
-- [README_ru.md](README_ru.md) - Русская документация (этот файл)
+- [README_ru.md](README_ru.md) - Русская документация (данный файл)
 - [api/v1/swagger.yaml](api/v1/swagger.yaml) - OpenAPI спецификация
 
 ## Лицензия

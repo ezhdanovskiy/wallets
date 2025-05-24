@@ -1,82 +1,82 @@
 # Wallets
 
-## Обзор проекта
+## Project Overview
 
-Wallets - это микросервис для управления электронными кошельками, написанный на Go. Сервис предоставляет REST API для создания кошельков, пополнения баланса, переводов между кошельками и просмотра истории операций.
+Wallets is a microservice for managing electronic wallets written in Go. The service provides a REST API for creating wallets, depositing funds, transferring between wallets, and viewing transaction history.
 
-### Основные возможности:
-- Создание именованных кошельков
-- Пополнение баланса кошелька  
-- Переводы между кошельками
-- Просмотр истории операций с фильтрацией по дате
-- Экспорт операций в CSV формате
+### Key Features:
+- Create named wallets
+- Deposit funds to wallets
+- Transfer funds between wallets
+- View transaction history with date filtering
+- Export transactions to CSV format
 
-## Быстрый старт
+## Quick Start
 
-### Требования
-- Go 1.14+
+### Requirements
+- Go 1.20+
 - PostgreSQL 12+
-- Docker и Docker Compose (опционально)
+- Docker and Docker Compose (optional)
 
-### Запуск с Docker Compose
+### Running with Docker Compose
 ```bash
-# Запустить все сервисы (PostgreSQL + приложение)
+# Start all services (PostgreSQL + application)
 docker-compose up
 
-# Запустить в фоновом режиме
+# Start in background
 docker-compose up -d
 ```
 
-### Локальный запуск
+### Local Development
 ```bash
-# 1. Запустить PostgreSQL
+# 1. Start PostgreSQL
 make postgres/up
 
-# 2. Применить миграции БД
+# 2. Apply database migrations
 make migrate/up
 
-# 3. Запустить приложение
+# 3. Run the application
 make run
 ```
 
-### Тестирование
+### Testing
 ```bash
-# Запустить юнит-тесты
+# Run unit tests
 make test
 
-# Запустить интеграционные тесты
+# Run integration tests
 make test/int
 ```
 
-### Сборка
+### Building
 ```bash
-# Собрать бинарный файл
+# Build binary
 make build
 
-# Собрать Docker образ
+# Build Docker image
 make build/docker
 ```
 
-## Структура проекта
+## Project Structure
 
 ```
 .
 ├── api/
 │   └── v1/
-│       └── swagger.yaml         # OpenAPI спецификация
+│       └── swagger.yaml         # OpenAPI specification
 ├── cmd/
-│   └── main.go                  # Точка входа приложения
+│   └── main.go                  # Application entry point
 ├── docs/
-│   └── diagrams/                # Диаграммы архитектуры
+│   └── diagrams/                # Architecture diagrams
 ├── internal/
-│   ├── application/             # Инициализация и запуск приложения
+│   ├── application/             # Application initialization and startup
 │   │   ├── application.go
 │   │   └── logger.go
-│   ├── config/                  # Конфигурация через env переменные
+│   ├── config/                  # Configuration from env variables
 │   │   └── config.go
-│   ├── consts/                  # Константы приложения
+│   ├── consts/                  # Application constants
 │   │   └── consts.go
-│   ├── csv/                     # Генерация CSV отчетов
+│   ├── csv/                     # CSV report generation
 │   │   └── operations.go
 │   ├── dto/                     # Data Transfer Objects
 │   │   ├── amount.go
@@ -84,75 +84,76 @@ make build/docker
 │   │   ├── operation.go
 │   │   ├── transfer.go
 │   │   └── wallet.go
-│   ├── http/                    # HTTP слой
+│   ├── http/                    # HTTP layer
 │   │   ├── dependencies.go
 │   │   ├── errors.go
 │   │   ├── handlers.go
 │   │   └── server.go
-│   ├── httperr/                 # HTTP ошибки
+│   ├── httperr/                 # HTTP errors
 │   │   └── errors.go
-│   ├── repository/              # Слой работы с БД
+│   ├── repository/              # Database layer
 │   │   ├── entities.go
 │   │   └── repository.go
-│   ├── service/                 # Бизнес-логика
+│   ├── service/                 # Business logic
 │   │   ├── dependencies.go
 │   │   ├── errors.go
 │   │   ├── service.go
 │   │   └── service_test.go
-│   └── tests/                   # Интеграционные тесты
+│   └── tests/                   # Integration tests
 │       └── integration_test.go
-├── migrations/                  # SQL миграции
+├── migrations/                  # SQL migrations
 ├── docker-compose.yml
 ├── Dockerfile
 ├── go.mod
 ├── go.sum
 ├── Makefile
-└── README.md
+├── README.md                    # This file (English)
+└── README_ru.md                 # Russian documentation
 ```
 
-## Архитектура
+## Architecture
 
-Приложение построено по принципу трёхслойной архитектуры с чёткими границами между слоями:
+The application follows a three-layer architecture with clear boundaries between layers:
 
-![Диаграмма зависимостей пакетов](docs/diagrams/package-dependencies.png)
+![Package Dependencies Diagram](docs/diagrams/package-dependencies.png)
 
-### Слои приложения:
+### Application Layers:
 
-1. **HTTP слой** (`internal/http/`) - обработка HTTP запросов, валидация входных данных, маршрутизация
-2. **Service слой** (`internal/service/`) - бизнес-логика, управление транзакциями, валидация бизнес-правил
-3. **Repository слой** (`internal/repository/`) - работа с базой данных, SQL запросы
+1. **HTTP Layer** (`internal/http/`) - HTTP request handling, input validation, routing
+2. **Service Layer** (`internal/service/`) - business logic, transaction management, business rule validation
+3. **Repository Layer** (`internal/repository/`) - database operations, SQL queries
 
-### Ключевые архитектурные решения:
+### Key Architectural Decisions:
 
-- **Уровень изоляции транзакций**: Используется `sql.LevelSerializable` для всех операций с кошельками, что гарантирует консистентность данных при конкурентных операциях
-- **Хранение денежных сумм**: В БД суммы хранятся как `numeric(18,2)`, в Go коде как `float64`
-- **Логирование операций**: Все денежные операции записываются в таблицу `operations` для аудита
-- **Валидация**: Минимальная сумма операции 0.01, проверяется на уровне HTTP слоя
+- **Transaction Isolation Level**: Uses `sql.LevelSerializable` for all wallet operations, ensuring data consistency in concurrent operations
+- **Money Storage**: Amounts are stored as `numeric(18,2)` in the database and `float64` in Go code
+- **Operation Logging**: All monetary operations are recorded in the `operations` table for audit purposes
+- **Validation**: Minimum operation amount is 0.01, validated at the HTTP layer
 
-### База данных
+### Database
 
-PostgreSQL с двумя основными таблицами:
-- **wallets** - информация о кошельках (id, name, balance, created_at, updated_at)
-- **operations** - история операций (id, wallet_id, type, amount, created_at)
+PostgreSQL with two main tables:
+- **wallets** - wallet information (id, name, balance, created_at, updated_at)
+- **operations** - transaction history (id, wallet_id, type, amount, created_at)
 
-## Конфигурация
+## Configuration
 
-Приложение настраивается через переменные окружения:
+The application is configured via environment variables:
 
-| Переменная | Описание | Значение по умолчанию |
-|------------|----------|---------------------|
-| `DB_HOST` | Хост PostgreSQL | `localhost` |
-| `DB_PORT` | Порт PostgreSQL | `5432` |
-| `DB_USER` | Пользователь БД | `postgres` |
-| `DB_PASSWORD` | Пароль БД | `postgres` |
-| `DB_NAME` | Имя БД | `wallets` |
-| `APP_PORT` | Порт HTTP сервера | `8080` |
-| `LOG_LEVEL` | Уровень логирования | `info` |
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_USER` | Database user | `postgres` |
+| `DB_PASSWORD` | Database password | `postgres` |
+| `DB_NAME` | Database name | `wallets` |
+| `APP_PORT` | HTTP server port | `8080` |
+| `LOG_LEVEL` | Logging level | `info` |
 
 ## API Endpoints
 
 ### POST /v1/wallets
-Создание нового кошелька
+Create a new wallet
 ```json
 {
   "name": "My Wallet"
@@ -160,7 +161,7 @@ PostgreSQL с двумя основными таблицами:
 ```
 
 ### POST /v1/wallets/deposit
-Пополнение кошелька
+Deposit funds to a wallet
 ```json
 {
   "wallet_id": "123e4567-e89b-12d3-a456-426614174000",
@@ -169,7 +170,7 @@ PostgreSQL с двумя основными таблицами:
 ```
 
 ### POST /v1/wallets/transfer
-Перевод между кошельками
+Transfer funds between wallets
 ```json
 {
   "from_wallet_id": "123e4567-e89b-12d3-a456-426614174000",
@@ -179,66 +180,72 @@ PostgreSQL с двумя основными таблицами:
 ```
 
 ### GET /v1/wallets/operations
-Получение истории операций с опциональными фильтрами:
-- `wallet_id` - ID кошелька
-- `from_date` - начальная дата (RFC3339)
-- `to_date` - конечная дата (RFC3339)
-- `offset` - смещение для пагинации
-- `limit` - количество записей
+Get transaction history with optional filters:
+- `wallet_id` - Wallet ID
+- `from_date` - Start date (RFC3339)
+- `to_date` - End date (RFC3339)
+- `offset` - Pagination offset
+- `limit` - Number of records
 
-Подробная спецификация API доступна в файле [api/v1/swagger.yaml](api/v1/swagger.yaml).
+Detailed API specification is available in [api/v1/swagger.yaml](api/v1/swagger.yaml).
 
-## Доступные команды
+## Available Commands
 
-### Makefile команды
+### Makefile Commands
 
-| Команда | Описание |
-|---------|----------|
-| `make build` | Сборка бинарного файла приложения |
-| `make test` | Запуск юнит-тестов |
-| `make test/int` | Запуск интеграционных тестов |
-| `make run` | Запуск приложения |
-| `make postgres/up` | Запуск PostgreSQL в Docker контейнере |
-| `make postgres/down` | Остановка PostgreSQL контейнера |
-| `make migrate/up` | Применение всех миграций |
-| `make migrate/down` | Откат последней миграции |
-| `make build/docker` | Сборка Docker образа приложения |
-| `make diagrams` | Генерация диаграмм из DOT файлов |
+| Command | Description |
+|---------|-------------|
+| `make build` | Build application binary |
+| `make test` | Run unit tests |
+| `make test/int` | Run integration tests |
+| `make run` | Run the application |
+| `make postgres/up` | Start PostgreSQL in Docker container |
+| `make postgres/down` | Stop PostgreSQL container |
+| `make migrate/up` | Apply all migrations |
+| `make migrate/down` | Rollback last migration |
+| `make build/docker` | Build Docker image |
+| `make diagrams` | Generate diagrams from DOT files |
 
-### Полезные команды для разработки
+### Development Commands
 
 ```bash
-# Просмотр документации пакета
+# View package documentation
 go doc internal/service
 
-# Генерация моков для тестов
+# Generate mocks for testing
 go generate ./...
 
-# Проверка покрытия тестами
+# Check test coverage
 go test -cover ./...
 
-# Запуск конкретного теста
+# Run specific test
 go test -run TestServiceTransfer ./internal/service
 ```
 
-## Особенности разработки
+## Development Features
 
-### Тестирование
-- **Юнит-тесты**: Используют моки репозитория для изоляции бизнес-логики. См. пример в `internal/service/service_test.go`
-- **Интеграционные тесты**: Тестируют полный стек с реальной БД. См. `internal/tests/integration_test.go`
+### Testing
+- **Unit Tests**: Use repository mocks to isolate business logic. See example in `internal/service/service_test.go`
+- **Integration Tests**: Test the full stack with a real database. See `internal/tests/integration_test.go`
 
-### Обработка ошибок
-- Кастомные ошибки определены в `internal/httperr/` для правильной HTTP семантики
-- Бизнес-ошибки (недостаточно средств, кошелёк не найден) возвращают соответствующие HTTP коды
+### Error Handling
+- Custom errors are defined in `internal/httperr/` for proper HTTP semantics
+- Business errors (insufficient funds, wallet not found) return appropriate HTTP status codes
 
-### Логирование
-- Используется структурированное логирование через Zap
-- Все операции с деньгами логируются для аудита
+### Logging
+- Structured logging via Zap
+- All monetary operations are logged for audit purposes
 
-### Метрики
-- Интегрирован Prometheus для сбора метрик
-- Доступны по адресу `/metrics`
+### Metrics
+- Prometheus integration for metrics collection
+- Available at `/metrics` endpoint
 
-## Лицензия
+## Documentation
 
-Этот проект распространяется под лицензией MIT. См. файл [LICENSE](LICENSE) для подробностей.
+- [README.md](README.md) - English documentation (this file)
+- [README_ru.md](README_ru.md) - Russian documentation
+- [api/v1/swagger.yaml](api/v1/swagger.yaml) - OpenAPI specification
+
+## License
+
+This project is distributed under the MIT License. See [LICENSE](LICENSE) file for details.

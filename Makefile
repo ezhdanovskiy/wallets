@@ -3,7 +3,7 @@ CUR_DIR=$(shell pwd)
 SRC=$(CUR_DIR)/cmd
 BINARY_NAME=$(CUR_DIR)/bin/$(APP_NAME)
 
-.PHONY: generate fmt test test/int build run clean mod/tidy build-container run-container
+.PHONY: generate fmt test test/int build run clean mod/tidy build-container run-container diagrams
 
 all: fmt generate test build clean mod/tidy
 
@@ -62,3 +62,20 @@ postgres/down:
 	docker-compose down --remove-orphans
 
 test/int/docker-compose: postgres/up test/int postgres/down
+
+diagrams:
+	$(info ************ GENERATE DIAGRAMS ************)
+	@if command -v dot > /dev/null 2>&1; then \
+		for file in docs/diagrams/*.dot; do \
+			if [ -f "$$file" ]; then \
+				echo "Generating PNG from $$file..."; \
+				dot -Tpng "$$file" -o "$${file%.dot}.png"; \
+			fi \
+		done; \
+		echo "Diagrams generated successfully"; \
+	else \
+		echo "WARNING: Graphviz (dot) is not installed. Install it to generate diagrams."; \
+		echo "On macOS: brew install graphviz"; \
+		echo "On Ubuntu/Debian: sudo apt-get install graphviz"; \
+		echo "On RHEL/CentOS: sudo yum install graphviz"; \
+	fi

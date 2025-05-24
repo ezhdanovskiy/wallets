@@ -1,0 +1,130 @@
+// Package Dependencies Diagram for Wallets Service
+// Generated with Graphviz version 2.43.0
+// Created: 2025-05-24
+// Version: 1.0
+
+digraph PackageDependencies {
+    // Graph settings
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fillcolor=lightblue, fontname="Arial"];
+    edge [fontname="Arial", fontsize=10];
+    
+    // Metadata
+    graph [label="Wallets Service - Package Dependencies\nVersion 1.0 | 2025-05-24", 
+           labelloc="t", 
+           fontsize=16, 
+           fontname="Arial Bold"];
+    
+    // External entry point
+    main [label="cmd/main.go\n(Entry Point)", fillcolor=lightgreen];
+    
+    // Internal packages
+    application [label="application\n(App Lifecycle)", fillcolor=lightcoral];
+    config [label="config\n(Configuration)", fillcolor=lightyellow];
+    consts [label="consts\n(Constants)", fillcolor=lightyellow];
+    csv [label="csv\n(CSV Export)", fillcolor=lightgray];
+    dto [label="dto\n(Data Transfer Objects)", fillcolor=lightyellow];
+    http [label="http\n(HTTP Layer)", fillcolor=lightblue];
+    httperr [label="httperr\n(HTTP Errors)", fillcolor=lightyellow];
+    repository [label="repository\n(Data Access)", fillcolor=lightcyan];
+    service [label="service\n(Business Logic)", fillcolor=lightgreen];
+    tests [label="tests\n(Integration Tests)", fillcolor=lavender];
+    
+    // Regular dependencies (solid lines)
+    main -> application [style=solid, color=black];
+    
+    application -> config [style=solid];
+    application -> http [style=solid];
+    application -> repository [style=solid];
+    application -> service [style=solid];
+    
+    csv -> dto [style=solid];
+    
+    http -> consts [style=solid];
+    http -> csv [style=solid];
+    http -> dto [style=solid];
+    http -> httperr [style=solid];
+    
+    repository -> config [style=solid];
+    repository -> consts [style=solid];
+    repository -> dto [style=solid];
+    
+    service -> consts [style=solid];
+    service -> dto [style=solid];
+    service -> httperr [style=solid];
+    
+    // Test dependencies (dashed lines)
+    tests -> consts [style=dashed, color=gray, label="test"];
+    tests -> dto [style=dashed, color=gray, label="test"];
+    tests -> http [style=dashed, color=gray, label="test"];
+    tests -> repository [style=dashed, color=gray, label="test"];
+    tests -> service [style=dashed, color=gray, label="test"];
+    
+    // Layer clusters
+    subgraph cluster_presentation {
+        label="Presentation Layer";
+        style=dashed;
+        color=blue;
+        http;
+    }
+    
+    subgraph cluster_business {
+        label="Business Layer";
+        style=dashed;
+        color=green;
+        service;
+    }
+    
+    subgraph cluster_data {
+        label="Data Layer";
+        style=dashed;
+        color=red;
+        repository;
+    }
+    
+    subgraph cluster_shared {
+        label="Shared Components";
+        style=dashed;
+        color=gray;
+        dto;
+        consts;
+        httperr;
+        config;
+        csv;
+    }
+    
+    // Legend
+    subgraph cluster_legend {
+        label="Legend";
+        style=filled;
+        fillcolor=white;
+        color=black;
+        fontsize=12;
+        
+        // Legend nodes
+        legend1 [shape=plaintext, label="Node Colors:"];
+        entry [label="Entry Point", fillcolor=lightgreen, width=1.5];
+        lifecycle [label="Lifecycle", fillcolor=lightcoral, width=1.5];
+        presentation [label="Presentation", fillcolor=lightblue, width=1.5];
+        business [label="Business", fillcolor=lightgreen, width=1.5];
+        data [label="Data Access", fillcolor=lightcyan, width=1.5];
+        shared [label="Shared", fillcolor=lightyellow, width=1.5];
+        testing [label="Testing", fillcolor=lavender, width=1.5];
+        
+        legend2 [shape=plaintext, label="\nEdge Styles:"];
+        solid_dep [shape=plaintext, label="Solid Line = Runtime Dependency"];
+        dashed_dep [shape=plaintext, label="Dashed Line = Test Dependency"];
+        
+        // Invisible edges to maintain layout
+        legend1 -> entry [style=invis];
+        entry -> lifecycle [style=invis];
+        lifecycle -> presentation [style=invis];
+        presentation -> business [style=invis];
+        business -> data [style=invis];
+        data -> shared [style=invis];
+        shared -> testing [style=invis];
+        testing -> legend2 [style=invis];
+        legend2 -> solid_dep [style=invis];
+        solid_dep -> dashed_dep [style=invis];
+    }
+}

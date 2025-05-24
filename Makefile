@@ -3,7 +3,7 @@ CUR_DIR=$(shell pwd)
 SRC=$(CUR_DIR)/cmd
 BINARY_NAME=$(CUR_DIR)/bin/$(APP_NAME)
 
-.PHONY: generate fmt test test/int build run clean mod/tidy build-container run-container diagrams
+.PHONY: generate fmt test test/int test/coverage test/coverage/int build run clean mod/tidy build-container run-container diagrams
 
 all: fmt generate test build clean mod/tidy
 
@@ -22,6 +22,16 @@ test:
 test/int:
 	$(info ************ RUN UNIT AND INTEGRATION TESTS ************)
 	go test -count=1 -tags integration -v ./...
+
+test/coverage:
+	$(info ************ RUN TESTS WITH COVERAGE ************)
+	go test -count=1 -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+test/coverage/int:
+	$(info ************ RUN INTEGRATION TESTS WITH COVERAGE ************)
+	go test -count=1 -tags integration -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -html=coverage.out -o coverage.html
 
 build:
 	$(info ************ BUILD ************)

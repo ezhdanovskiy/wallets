@@ -10,7 +10,7 @@ type Config struct {
 	LogLevel    string `mapstructure:"log_level"`
 	LogEncoding string `mapstructure:"log_encoding"` // json/console
 	HttpPort    int    `mapstructure:"http_port"`
-	DB          DB
+	DB          DB     `mapstructure:",squash"`
 }
 
 // DB contains parameter for configuring repository.

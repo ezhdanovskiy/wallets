@@ -1,0 +1,81 @@
+digraph PackageDependencies {
+    rankdir=TB;
+    node [shape=box, style="rounded,filled", fillcolor=lightblue];
+    
+    // External entry point
+    main [label="cmd/main.go", fillcolor=lightgreen];
+    
+    // Internal packages
+    application [label="application", fillcolor=lightcoral];
+    config [label="config", fillcolor=lightyellow];
+    consts [label="consts", fillcolor=lightyellow];
+    csv [label="csv", fillcolor=lightgray];
+    dto [label="dto", fillcolor=lightyellow];
+    http [label="http", fillcolor=lightblue];
+    httperr [label="httperr", fillcolor=lightyellow];
+    repository [label="repository", fillcolor=lightcyan];
+    service [label="service", fillcolor=lightgreen];
+    tests [label="tests", fillcolor=lavender];
+    
+    // Dependencies
+    main -> application;
+    
+    application -> config;
+    application -> http;
+    application -> repository;
+    application -> service;
+    
+    csv -> dto;
+    
+    http -> consts;
+    http -> csv;
+    http -> dto;
+    http -> httperr;
+    
+    repository -> config;
+    repository -> consts;
+    repository -> dto;
+    
+    service -> consts;
+    service -> dto;
+    service -> httperr;
+    
+    tests -> consts;
+    tests -> dto;
+    tests -> http;
+    tests -> repository;
+    tests -> service;
+    
+    // Subgraph for layers
+    subgraph cluster_presentation {
+        label="Presentation Layer";
+        style=dashed;
+        color=blue;
+        http;
+    }
+    
+    subgraph cluster_business {
+        label="Business Layer";
+        style=dashed;
+        color=green;
+        service;
+    }
+    
+    subgraph cluster_data {
+        label="Data Layer";
+        style=dashed;
+        color=red;
+        repository;
+    }
+    
+    subgraph cluster_shared {
+        label="Shared";
+        style=dashed;
+        color=gray;
+        dto;
+        consts;
+        httperr;
+        config;
+        csv;
+    }
+}

@@ -83,21 +83,19 @@ jobs:
     - name: Update README with coverage badge
       if: github.ref == 'refs/heads/master' && github.event_name == 'push'
       run: |
-        # Читаем текущий README
-        README_CONTENT=$(cat README.md)
+        # Заменяем строку с бейджем покрытия используя более надёжный подход
+        sed -i "s|!\[Coverage\](https://img.shields.io/badge/coverage-[0-9.]*%25-[a-z]*)|![Coverage](https://img.shields.io/badge/coverage-${{ env.COVERAGE }}%25-${{ env.BADGE_COLOR }})|g" README.md
         
-        # Заменяем строку с бейджем покрытия
-        UPDATED_README=$(echo "$README_CONTENT" | sed "s|!\[Go\](https://github.com/ezhdanovskiy/wallets/actions/workflows/coverage.yml/badge.svg)|![Coverage](https://img.shields.io/badge/coverage-${{ env.COVERAGE }}%25-${{ env.BADGE_COLOR }})|")
-        
-        # Записываем обновлённый README
-        echo "$UPDATED_README" > README.md
-        
-        # Коммитим изменения
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add README.md
-        git diff --quiet && git diff --staged --quiet || git commit -m "Update coverage badge to ${{ env.COVERAGE }}%"
-        git push
+        # Коммитим изменения только если файл действительно изменился
+        if git diff --quiet README.md; then
+          echo "No changes to commit"
+        else
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Update coverage badge to ${{ env.COVERAGE }}%"
+          git push
+        fi
     
     # Для master сохраняем покрытие в артефакт
     - name: Save coverage for master

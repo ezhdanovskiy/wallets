@@ -55,12 +55,80 @@ jobs:
       run: |
         go test -tags integration -coverprofile=coverage.out -covermode=atomic ./...
         go tool cover -func=coverage.out
+        # Сохраняем процент покрытия в переменную
+        echo "COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//g')" >> $GITHUB_ENV
       env:
         DB_HOST: localhost
         DB_PORT: 5432
         DB_USER: postgres
         DB_PASSWORD: postgres
         DB_NAME: postgres
+    
+    # Для master сохраняем покрытие в артефакт
+    - name: Save coverage for master
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      run: echo "${{ env.COVERAGE }}" > master-coverage.txt
+    
+    - name: Upload master coverage
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v3
+      with:
+        name: master-coverage
+        path: master-coverage.txt
+        retention-days: 90
+    
+    # Для PR получаем покрытие master и сравниваем
+    - name: Download master coverage
+      if: github.event_name == 'pull_request'
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: coverage.yml
+        branch: master
+        name: master-coverage
+        path: ./
+      continue-on-error: true
+    
+    - name: Compare coverage
+      if: github.event_name == 'pull_request'
+      run: |
+        if [ -f master-coverage.txt ]; then
+          MASTER_COVERAGE=$(cat master-coverage.txt)
+          echo "Master coverage: $MASTER_COVERAGE%"
+          echo "Current coverage: ${{ env.COVERAGE }}%"
+          
+          # Вычисляем разницу
+          DIFF=$(echo "${{ env.COVERAGE }} - $MASTER_COVERAGE" | bc)
+          
+          # Форматируем разницу с знаком
+          if (( $(echo "$DIFF > 0" | bc -l) )); then
+            DIFF_FORMATTED="+$DIFF"
+          else
+            DIFF_FORMATTED="$DIFF"
+          fi
+          
+          # Формируем сообщение
+          if (( $(echo "$DIFF > 0" | bc -l) )); then
+            EMOJI="📈"
+            TREND="increased"
+          elif (( $(echo "$DIFF < 0" | bc -l) )); then
+            EMOJI="📉"
+            TREND="decreased"
+          else
+            EMOJI="➡️"
+            TREND="remained the same"
+          fi
+          
+          echo "COVERAGE_DIFF=$DIFF_FORMATTED" >> $GITHUB_ENV
+          echo "COVERAGE_TREND=$TREND" >> $GITHUB_ENV
+          echo "COVERAGE_EMOJI=$EMOJI" >> $GITHUB_ENV
+          echo "MASTER_COVERAGE=$MASTER_COVERAGE" >> $GITHUB_ENV
+        else
+          echo "No master coverage data found"
+          echo "COVERAGE_DIFF=N/A" >> $GITHUB_ENV
+          echo "COVERAGE_TREND=unknown" >> $GITHUB_ENV
+          echo "COVERAGE_EMOJI=❓" >> $GITHUB_ENV
+          echo "MASTER_COVERAGE=N/A" >> $GITHUB_ENV
+        fi
     
     - name: Install gocover-cobertura
       run: go install github.com/boumenot/gocover-cobertura@latest
@@ -81,12 +149,57 @@ jobs:
         output: both
         thresholds: '10 50'
     
+    # Создаём улучшенный комментарий для PR
+    - name: Create coverage comment
+      if: github.event_name == 'pull_request'
+      run: |
+        cat > coverage-comment.md <<EOF
+        ## 📊 Code Coverage Report
+        
+        **Current Coverage:** ${{ env.COVERAGE }}% ${{ env.COVERAGE_EMOJI }}
+        **Master Coverage:** ${{ env.MASTER_COVERAGE }}%
+        **Difference:** ${{ env.COVERAGE_DIFF }}% (${{ env.COVERAGE_TREND }})
+        
+        ---
+        
+        EOF
+        cat code-coverage-results.md >> coverage-comment.md
+    
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2
       if: github.event_name == 'pull_request'
       with:
         recreate: true
-        path: code-coverage-results.md
+        path: ${{ github.event_name == 'pull_request' && 'coverage-comment.md' || 'code-coverage-results.md' }}
     
     - name: Write to Job Summary
-      run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+      run: |
+        if [ -f coverage-comment.md ]; then
+          cat coverage-comment.md >> $GITHUB_STEP_SUMMARY
+        else
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    # Создаём JSON файл с покрытием для бейджа
+    - name: Create coverage badge JSON
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      run: |
+        # Определяем цвет бейджа в зависимости от покрытия
+        if (( $(echo "${{ env.COVERAGE }} >= 80" | bc -l) )); then
+          COLOR="brightgreen"
+        elif (( $(echo "${{ env.COVERAGE }} >= 60" | bc -l) )); then
+          COLOR="yellow"
+        elif (( $(echo "${{ env.COVERAGE }} >= 40" | bc -l) )); then
+          COLOR="orange"
+        else
+          COLOR="red"
+        fi
+        echo "{\"schemaVersion\": 1, \"label\": \"coverage\", \"message\": \"${{ env.COVERAGE }}%\", \"color\": \"$COLOR\"}" > coverage-badge.json
+    
+    - name: Upload coverage badge JSON
+      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-badge
+        path: coverage-badge.json
+        retention-days: 90

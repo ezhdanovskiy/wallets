@@ -79,23 +79,11 @@ jobs:
           echo "BADGE_COLOR=red" >> $GITHUB_ENV
         fi
     
-    # Обновляем README с актуальным процентом покрытия (только для master)
-    - name: Update README with coverage badge
-      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      run: |
-        # Заменяем строку с бейджем покрытия используя более надёжный подход
-        sed -i "s|!\[Coverage\](https://img.shields.io/badge/coverage-[0-9.]*%25-[a-z]*)|![Coverage](https://img.shields.io/badge/coverage-${{ env.COVERAGE }}%25-${{ env.BADGE_COLOR }})|g" README.md
-        
-        # Коммитим изменения только если файл действительно изменился
-        if git diff --quiet README.md; then
-          echo "No changes to commit"
-        else
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add README.md
-          git commit -m "Update coverage badge to ${{ env.COVERAGE }}%"
-          git push
-        fi
+    # ВРЕМЕННО ОТКЛЮЧАЕМ обновление README чтобы остановить перезапись
+    # - name: Update README with coverage badge
+    #   if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    #   run: |
+    #     echo "README update is temporarily disabled to fix the overwrite issue"
     
     # Для master сохраняем покрытие в артефакт
     - name: Save coverage for master

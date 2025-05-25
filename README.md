@@ -1,5 +1,9 @@
 # Wallets
 
+[![Go](https://github.com/ezhdanovskiy/wallets/actions/workflows/coverage.yml/badge.svg)](https://github.com/ezhdanovskiy/wallets/actions/workflows/coverage.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ezhdanovskiy/wallets)](https://goreportcard.com/report/github.com/ezhdanovskiy/wallets)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## Project Overview
 
 Wallets is a microservice for managing electronic wallets written in Go. The service provides a REST API for creating wallets, depositing funds, transferring between wallets, and viewing transaction history.
@@ -46,6 +50,9 @@ make test
 
 # Run integration tests
 make test/int
+
+# Run tests with coverage
+make test/cover
 ```
 
 ### Building
@@ -198,6 +205,7 @@ Detailed API specification is available in [api/v1/swagger.yaml](api/v1/swagger.
 | `make build` | Build application binary |
 | `make test` | Run unit tests |
 | `make test/int` | Run integration tests |
+| `make test/cover` | Run tests with coverage report |
 | `make run` | Run the application |
 | `make postgres/up` | Start PostgreSQL in Docker container |
 | `make postgres/down` | Stop PostgreSQL container |
@@ -227,6 +235,7 @@ go test -run TestServiceTransfer ./internal/service
 ### Testing
 - **Unit Tests**: Use repository mocks to isolate business logic. See example in `internal/service/service_test.go`
 - **Integration Tests**: Test the full stack with a real database. See `internal/tests/integration_test.go`
+- **Code Coverage**: The project maintains comprehensive test coverage. In PRs, coverage is compared with the master branch to track improvements
 
 ### Error Handling
 - Custom errors are defined in `internal/httperr/` for proper HTTP semantics

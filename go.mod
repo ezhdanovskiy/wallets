@@ -1,6 +1,8 @@
 module github.com/ezhdanovskiy/wallets
 
-go 1.22
+go 1.23
+
+toolchain go1.24.1
 
 require (
 	github.com/go-chi/chi v1.5.4
@@ -19,7 +21,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
@@ -37,7 +38,6 @@ require (
 	github.com/spf13/cast v1.3.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	go.uber.org/atomic v1.6.0 // indirect
 	go.uber.org/multierr v1.5.0 // indirect

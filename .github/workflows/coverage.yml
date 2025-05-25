@@ -40,8 +40,19 @@ jobs:
     
     - name: Install migrate tool
       run: |
+        # Создаём временную директорию для migrate
+        MIGRATE_TMP_DIR=$(mktemp -d)
+        cd $MIGRATE_TMP_DIR
+        
+        # Скачиваем и распаковываем migrate во временную директорию
         curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+        
+        # Перемещаем только исполняемый файл migrate
         sudo mv migrate /usr/local/bin/migrate
+        
+        # Удаляем временную директорию
+        cd -
+        rm -rf $MIGRATE_TMP_DIR
     
     - name: Run migrations
       run: |

@@ -40,8 +40,19 @@ jobs:
     
     - name: Install migrate tool
       run: |
+        # Создаём временную директорию для migrate
+        MIGRATE_TMP_DIR=$(mktemp -d)
+        cd $MIGRATE_TMP_DIR
+        
+        # Скачиваем и распаковываем migrate во временную директорию
         curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+        
+        # Перемещаем только исполняемый файл migrate
         sudo mv migrate /usr/local/bin/migrate
+        
+        # Удаляем временную директорию
+        cd -
+        rm -rf $MIGRATE_TMP_DIR
     
     - name: Run migrations
       run: |
@@ -79,11 +90,23 @@ jobs:
           echo "BADGE_COLOR=red" >> $GITHUB_ENV
         fi
     
-    # ВРЕМЕННО ОТКЛЮЧАЕМ обновление README чтобы остановить перезапись
-    # - name: Update README with coverage badge
-    #   if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    #   run: |
-    #     echo "README update is temporarily disabled to fix the overwrite issue"
+    # Обновляем README с актуальным процентом покрытия (только для master)
+    - name: Update README with coverage badge
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: |
+        # Заменяем строку с бейджем покрытия используя более надёжный подход
+        sed -i "s|!\[Coverage\](https://img.shields.io/badge/coverage-[0-9.]*%25-[a-z]*)|![Coverage](https://img.shields.io/badge/coverage-${{ env.COVERAGE }}%25-${{ env.BADGE_COLOR }})|g" README.md
+        
+        # Коммитим изменения только если файл действительно изменился
+        if git diff --quiet README.md; then
+          echo "No changes to commit"
+        else
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Update coverage badge to ${{ env.COVERAGE }}%"
+          git push
+        fi
     
     # Для master сохраняем покрытие в артефакт
     - name: Save coverage for master

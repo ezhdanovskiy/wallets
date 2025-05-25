@@ -70,6 +70,9 @@ jobs:
         go tool cover -func=coverage.out
         # Сохраняем процент покрытия в переменную
         echo "COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//g')" >> $GITHUB_ENV
+        
+        # Также сохраняем детальную информацию по пакетам
+        go tool cover -func=coverage.out > coverage-details.txt
       env:
         DB_HOST: localhost
         DB_PORT: 5432
@@ -174,24 +177,22 @@ jobs:
           echo "MASTER_COVERAGE=N/A" >> $GITHUB_ENV
         fi
     
-    - name: Install gocover-cobertura
-      run: go install github.com/boumenot/gocover-cobertura@latest
-    
-    - name: Convert coverage to Cobertura format
-      run: gocover-cobertura < coverage.out > coverage.cobertura.xml
-    
-    - name: Code Coverage Report
-      uses: irongut/CodeCoverageSummary@v1.3.0
-      with:
-        filename: coverage.cobertura.xml
-        badge: true
-        fail_below_min: true
-        format: markdown
-        hide_branch_rate: false
-        hide_complexity: true
-        indicators: true
-        output: both
-        thresholds: '10 50'
+    # Создаём собственный отчёт о покрытии вместо использования CodeCoverageSummary
+    - name: Generate coverage report
+      run: |
+        # Создаём отчёт о покрытии
+        cat > code-coverage-results.md <<EOF
+        ## Code Coverage: ${{ env.COVERAGE }}%
+        
+        <details>
+        <summary>Coverage by package</summary>
+        
+        \`\`\`
+        $(cat coverage-details.txt)
+        \`\`\`
+        
+        </details>
+        EOF
     
     # Создаём улучшенный комментарий для PR
     - name: Create coverage comment

@@ -1,196 +1,264 @@
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/golang-migrate/migrate/ci.yaml?branch=master)](https://github.com/golang-migrate/migrate/actions/workflows/ci.yaml?query=branch%3Amaster)
-[![GoDoc](https://pkg.go.dev/badge/github.com/golang-migrate/migrate)](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)
-[![Coverage Status](https://img.shields.io/coveralls/github/golang-migrate/migrate/master.svg)](https://coveralls.io/github/golang-migrate/migrate?branch=master)
-[![packagecloud.io](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/golang-migrate/migrate?filter=debs)
-[![Docker Pulls](https://img.shields.io/docker/pulls/migrate/migrate.svg)](https://hub.docker.com/r/migrate/migrate/)
-![Supported Go Versions](https://img.shields.io/badge/Go-1.20%2C%201.21-lightgrey.svg)
-[![GitHub Release](https://img.shields.io/github/release/golang-migrate/migrate.svg)](https://github.com/golang-migrate/migrate/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/golang-migrate/migrate/v4)](https://goreportcard.com/report/github.com/golang-migrate/migrate/v4)
+# Wallets
 
-# migrate
+![Coverage](https://img.shields.io/badge/coverage-31%25-red)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ezhdanovskiy/wallets)](https://goreportcard.com/report/github.com/ezhdanovskiy/wallets)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-__Database migrations written in Go. Use as [CLI](#cli-usage) or import as [library](#use-in-your-go-project).__
+## Project Overview
 
-* Migrate reads migrations from [sources](#migration-sources)
-   and applies them in correct order to a [database](#databases).
-* Drivers are "dumb", migrate glues everything together and makes sure the logic is bulletproof.
-   (Keeps the drivers lightweight, too.)
-* Database drivers don't assume things or try to correct user input. When in doubt, fail.
+Wallets is a microservice for managing electronic wallets written in Go. The service provides a REST API for creating wallets, depositing funds, transferring between wallets, and viewing transaction history.
 
-Forked from [mattes/migrate](https://github.com/mattes/migrate)
+### Key Features:
+- Create named wallets
+- Deposit funds to wallets
+- Transfer funds between wallets
+- View transaction history with date filtering
+- Export transactions to CSV format
 
-## Databases
+## Quick Start
 
-Database drivers run migrations. [Add a new database?](database/driver.go)
+### Requirements
+- Go 1.20+
+- PostgreSQL 12+
+- Docker and Docker Compose (optional)
 
-* [PostgreSQL](database/postgres)
-* [PGX v4](database/pgx)
-* [PGX v5](database/pgx/v5)
-* [Redshift](database/redshift)
-* [Ql](database/ql)
-* [Cassandra / ScyllaDB](database/cassandra)
-* [SQLite](database/sqlite)
-* [SQLite3](database/sqlite3) ([todo #165](https://github.com/mattes/migrate/issues/165))
-* [SQLCipher](database/sqlcipher)
-* [MySQL / MariaDB](database/mysql)
-* [Neo4j](database/neo4j)
-* [MongoDB](database/mongodb)
-* [CrateDB](database/crate) ([todo #170](https://github.com/mattes/migrate/issues/170))
-* [Shell](database/shell) ([todo #171](https://github.com/mattes/migrate/issues/171))
-* [Google Cloud Spanner](database/spanner)
-* [CockroachDB](database/cockroachdb)
-* [YugabyteDB](database/yugabytedb)
-* [ClickHouse](database/clickhouse)
-* [Firebird](database/firebird)
-* [MS SQL Server](database/sqlserver)
-* [RQLite](database/rqlite)
-
-### Database URLs
-
-Database connection strings are specified via URLs. The URL format is driver dependent but generally has the form: `dbdriver://username:password@host:port/dbname?param1=true&param2=false`
-
-Any [reserved URL characters](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_reserved_characters) need to be escaped. Note, the `%` character also [needs to be escaped](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_the_percent_character)
-
-Explicitly, the following characters need to be escaped:
-`!`, `#`, `$`, `%`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `/`, `:`, `;`, `=`, `?`, `@`, `[`, `]`
-
-It's easiest to always run the URL parts of your DB connection URL (e.g. username, password, etc) through an URL encoder. See the example Python snippets below:
-
+### Running with Docker Compose
 ```bash
-$ python3 -c 'import urllib.parse; print(urllib.parse.quote(input("String to encode: "), ""))'
-String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
-FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
-$ python2 -c 'import urllib; print urllib.quote(raw_input("String to encode: "), "")'
-String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
-FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
-$
+# Start all services (PostgreSQL + application)
+docker-compose up
+
+# Start in background
+docker-compose up -d
 ```
 
-## Migration Sources
-
-Source drivers read migrations from local or remote sources. [Add a new source?](source/driver.go)
-
-* [Filesystem](source/file) - read from filesystem
-* [io/fs](source/iofs) - read from a Go [io/fs](https://pkg.go.dev/io/fs#FS)
-* [Go-Bindata](source/go_bindata) - read from embedded binary data ([jteeuwen/go-bindata](https://github.com/jteeuwen/go-bindata))
-* [pkger](source/pkger) - read from embedded binary data ([markbates/pkger](https://github.com/markbates/pkger))
-* [GitHub](source/github) - read from remote GitHub repositories
-* [GitHub Enterprise](source/github_ee) - read from remote GitHub Enterprise repositories
-* [Bitbucket](source/bitbucket) - read from remote Bitbucket repositories
-* [Gitlab](source/gitlab) - read from remote Gitlab repositories
-* [AWS S3](source/aws_s3) - read from Amazon Web Services S3
-* [Google Cloud Storage](source/google_cloud_storage) - read from Google Cloud Platform Storage
-
-## CLI usage
-
-* Simple wrapper around this library.
-* Handles ctrl+c (SIGINT) gracefully.
-* No config search paths, no config files, no magic ENV var injections.
-
-__[CLI Documentation](cmd/migrate)__
-
-### Basic usage
-
+### Local Development
 ```bash
-$ migrate -source file://path/to/migrations -database postgres://localhost:5432/database up 2
+# 1. Start PostgreSQL
+make postgres/up
+
+# 2. Apply database migrations
+make migrate/up
+
+# 3. Run the application
+make run
 ```
 
-### Docker usage
-
+### Testing
 ```bash
-$ docker run -v {{ migration dir }}:/migrations --network host migrate/migrate
-    -path=/migrations/ -database postgres://localhost:5432/database up 2
+# Run unit tests
+make test
+
+# Run integration tests
+make test/int
+
+# Run tests with coverage
+make test/coverage
+
+# Run integration tests with coverage
+make test/coverage/int
 ```
 
-## Use in your Go project
+### Building
+```bash
+# Build binary
+make build
 
-* API is stable and frozen for this release (v3 & v4).
-* Uses [Go modules](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more) to manage dependencies.
-* To help prevent database corruptions, it supports graceful stops via `GracefulStop chan bool`.
-* Bring your own logger.
-* Uses `io.Reader` streams internally for low memory overhead.
-* Thread-safe and no goroutine leaks.
+# Build Docker image
+make build/docker
+```
 
-__[Go Documentation](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)__
+## Project Structure
 
-```go
-import (
-    "github.com/golang-migrate/migrate/v4"
-    _ "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/github"
-)
+```
+.
+├── api/
+│   └── v1/
+│       └── swagger.yaml         # OpenAPI specification
+├── cmd/
+│   └── main.go                  # Application entry point
+├── docs/
+│   └── diagrams/                # Architecture diagrams
+├── internal/
+│   ├── application/             # Application initialization and startup
+│   │   ├── application.go
+│   │   └── logger.go
+│   ├── config/                  # Configuration from env variables
+│   │   └── config.go
+│   ├── consts/                  # Application constants
+│   │   └── consts.go
+│   ├── csv/                     # CSV report generation
+│   │   └── operations.go
+│   ├── dto/                     # Data Transfer Objects
+│   │   ├── amount.go
+│   │   ├── deposit.go
+│   │   ├── operation.go
+│   │   ├── transfer.go
+│   │   └── wallet.go
+│   ├── http/                    # HTTP layer
+│   │   ├── dependencies.go
+│   │   ├── errors.go
+│   │   ├── handlers.go
+│   │   └── server.go
+│   ├── httperr/                 # HTTP errors
+│   │   └── errors.go
+│   ├── repository/              # Database layer
+│   │   ├── entities.go
+│   │   └── repository.go
+│   ├── service/                 # Business logic
+│   │   ├── dependencies.go
+│   │   ├── errors.go
+│   │   ├── service.go
+│   │   └── service_test.go
+│   └── tests/                   # Integration tests
+│       └── integration_test.go
+├── migrations/                  # SQL migrations
+├── docker-compose.yml
+├── Dockerfile
+├── go.mod
+├── go.sum
+├── Makefile
+├── README.md                    # This file (English)
+└── README_ru.md                 # Russian documentation
+```
 
-func main() {
-    m, err := migrate.New(
-        "github://mattes:personal-access-token@mattes/migrate_test",
-        "postgres://localhost:5432/database?sslmode=enable")
-    m.Steps(2)
+## Architecture
+
+The application follows a three-layer architecture with clear boundaries between layers:
+
+![Package Dependencies Diagram](docs/diagrams/package-dependencies.png)
+
+### Application Layers:
+
+1. **HTTP Layer** (`internal/http/`) - HTTP request handling, input validation, routing
+2. **Service Layer** (`internal/service/`) - business logic, transaction management, business rule validation
+3. **Repository Layer** (`internal/repository/`) - database operations, SQL queries
+
+### Key Architectural Decisions:
+
+- **Transaction Isolation Level**: Uses `sql.LevelSerializable` for all wallet operations, ensuring data consistency in concurrent operations
+- **Money Storage**: Amounts are stored as `numeric(18,2)` in the database and `float64` in Go code
+- **Operation Logging**: All monetary operations are recorded in the `operations` table for audit purposes
+- **Validation**: Minimum operation amount is 0.01, validated at the HTTP layer
+
+### Database
+
+PostgreSQL with two main tables:
+- **wallets** - wallet information (id, name, balance, created_at, updated_at)
+- **operations** - transaction history (id, wallet_id, type, amount, created_at)
+
+## Configuration
+
+The application is configured via environment variables:
+
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_USER` | Database user | `postgres` |
+| `DB_PASSWORD` | Database password | `postgres` |
+| `DB_NAME` | Database name | `wallets` |
+| `APP_PORT` | HTTP server port | `8080` |
+| `LOG_LEVEL` | Logging level | `info` |
+
+## API Endpoints
+
+### POST /v1/wallets
+Create a new wallet
+```json
+{
+  "name": "My Wallet"
 }
 ```
 
-Want to use an existing database client?
-
-```go
-import (
-    "database/sql"
-    _ "github.com/lib/pq"
-    "github.com/golang-migrate/migrate/v4"
-    "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/file"
-)
-
-func main() {
-    db, err := sql.Open("postgres", "postgres://localhost:5432/database?sslmode=enable")
-    driver, err := postgres.WithInstance(db, &postgres.Config{})
-    m, err := migrate.NewWithDatabaseInstance(
-        "file:///migrations",
-        "postgres", driver)
-    m.Up() // or m.Step(2) if you want to explicitly set the number of migrations to run
+### POST /v1/wallets/deposit
+Deposit funds to a wallet
+```json
+{
+  "wallet_id": "123e4567-e89b-12d3-a456-426614174000",
+  "amount": 100.50
 }
 ```
 
-## Getting started
-
-Go to [getting started](GETTING_STARTED.md)
-
-## Tutorials
-
-* [CockroachDB](database/cockroachdb/TUTORIAL.md)
-* [PostgreSQL](database/postgres/TUTORIAL.md)
-
-(more tutorials to come)
-
-## Migration files
-
-Each migration has an up and down migration. [Why?](FAQ.md#why-two-separate-files-up-and-down-for-a-migration)
-
-```bash
-1481574547_create_users_table.up.sql
-1481574547_create_users_table.down.sql
+### POST /v1/wallets/transfer
+Transfer funds between wallets
+```json
+{
+  "from_wallet_id": "123e4567-e89b-12d3-a456-426614174000",
+  "to_wallet_id": "987fcdeb-51a2-43d1-9012-345678901234",
+  "amount": 50.00
+}
 ```
 
-[Best practices: How to write migrations.](MIGRATIONS.md)
+### GET /v1/wallets/operations
+Get transaction history with optional filters:
+- `wallet_id` - Wallet ID
+- `from_date` - Start date (RFC3339)
+- `to_date` - End date (RFC3339)
+- `offset` - Pagination offset
+- `limit` - Number of records
 
-## Coming from another db migration tool?
+Detailed API specification is available in [api/v1/swagger.yaml](api/v1/swagger.yaml).
 
-Check out [migradaptor](https://github.com/musinit/migradaptor/).
-*Note: migradaptor is not affliated or supported by this project*
+## Available Commands
 
-## Versions
+### Makefile Commands
 
-Version | Supported? | Import | Notes
---------|------------|--------|------
-**master** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | New features and bug fixes arrive here first |
-**v4** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | Used for stable releases |
-**v3** | :x: | `import "github.com/golang-migrate/migrate"` (with package manager) or `import "gopkg.in/golang-migrate/migrate.v3"` (not recommended) | **DO NOT USE** - No longer supported |
+| Command | Description |
+|---------|-------------|
+| `make build` | Build application binary |
+| `make test` | Run unit tests |
+| `make test/int` | Run integration tests |
+| `make test/coverage` | Run tests with coverage report |
+| `make test/coverage/int` | Run integration tests with coverage |
+| `make run` | Run the application |
+| `make postgres/up` | Start PostgreSQL in Docker container |
+| `make postgres/down` | Stop PostgreSQL container |
+| `make migrate/up` | Apply all migrations |
+| `make migrate/down` | Rollback last migration |
+| `make build/docker` | Build Docker image |
+| `make diagrams` | Generate diagrams from DOT files |
 
-## Development and Contributing
+### Development Commands
 
-Yes, please! [`Makefile`](Makefile) is your friend,
-read the [development guide](CONTRIBUTING.md).
+```bash
+# View package documentation
+go doc internal/service
 
-Also have a look at the [FAQ](FAQ.md).
+# Generate mocks for testing
+go generate ./...
 
----
+# Check test coverage
+go test -cover ./...
 
-Looking for alternatives? [https://awesome-go.com/#database](https://awesome-go.com/#database).
+# Run specific test
+go test -run TestServiceTransfer ./internal/service
+```
+
+## Development Features
+
+### Testing
+- **Unit Tests**: Use repository mocks to isolate business logic. See example in `internal/service/service_test.go`
+- **Integration Tests**: Test the full stack with a real database. See `internal/tests/integration_test.go`
+- **Code Coverage**: The project maintains comprehensive test coverage. In PRs, coverage is compared with the master branch to track improvements
+
+### Error Handling
+- Custom errors are defined in `internal/httperr/` for proper HTTP semantics
+- Business errors (insufficient funds, wallet not found) return appropriate HTTP status codes
+
+### Logging
+- Structured logging via Zap
+- All monetary operations are logged for audit purposes
+
+### Metrics
+- Prometheus integration for metrics collection
+- Available at `/metrics` endpoint
+
+## Documentation
+
+- [README.md](README.md) - English documentation (this file)
+- [README_ru.md](README_ru.md) - Russian documentation
+- [api/v1/swagger.yaml](api/v1/swagger.yaml) - OpenAPI specification
+
+## License
+
+This project is distributed under the MIT License. See [LICENSE](LICENSE) file for details.

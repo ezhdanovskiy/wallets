@@ -52,7 +52,10 @@ make test
 make test/int
 
 # Run tests with coverage
-make test/cover
+make test/coverage
+
+# Run integration tests with coverage
+make test/coverage/int
 ```
 
 ### Building
@@ -205,7 +208,8 @@ Detailed API specification is available in [api/v1/swagger.yaml](api/v1/swagger.
 | `make build` | Build application binary |
 | `make test` | Run unit tests |
 | `make test/int` | Run integration tests |
-| `make test/cover` | Run tests with coverage report |
+| `make test/coverage` | Run tests with coverage report |
+| `make test/coverage/int` | Run integration tests with coverage |
 | `make run` | Run the application |
 | `make postgres/up` | Start PostgreSQL in Docker container |
 | `make postgres/down` | Stop PostgreSQL container |

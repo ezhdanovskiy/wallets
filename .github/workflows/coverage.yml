@@ -66,13 +66,15 @@ jobs:
     
     - name: Run tests with coverage
       run: |
-        go test -tags integration -coverprofile=coverage.out -covermode=atomic ./...
-        go tool cover -func=coverage.out
-        # Сохраняем процент покрытия в переменную
-        echo "COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//g')" >> $GITHUB_ENV
+        # Запускаем тесты и сохраняем вывод с покрытием по пакетам
+        go test -tags integration -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-output.txt
         
-        # Также сохраняем детальную информацию по пакетам
-        go tool cover -func=coverage.out > coverage-details.txt
+        # Извлекаем информацию о покрытии по пакетам
+        grep -E "(coverage:|no test files)" test-output.txt > coverage-by-package.txt || true
+        
+        # Получаем общий процент покрытия
+        go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//g' > total-coverage.txt
+        echo "COVERAGE=$(cat total-coverage.txt)" >> $GITHUB_ENV
       env:
         DB_HOST: localhost
         DB_PORT: 5432
@@ -177,7 +179,7 @@ jobs:
           echo "MASTER_COVERAGE=N/A" >> $GITHUB_ENV
         fi
     
-    # Создаём собственный отчёт о покрытии вместо использования CodeCoverageSummary
+    # Создаём собственный отчёт о покрытии с информацией по пакетам
     - name: Generate coverage report
       run: |
         # Создаём отчёт о покрытии
@@ -188,7 +190,7 @@ jobs:
         <summary>Coverage by package</summary>
         
         \`\`\`
-        $(cat coverage-details.txt)
+        $(cat coverage-by-package.txt)
         \`\`\`
         
         </details>

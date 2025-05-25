@@ -27,6 +27,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -63,6 +65,39 @@ jobs:
         DB_USER: postgres
         DB_PASSWORD: postgres
         DB_NAME: postgres
+    
+    # Определяем цвет для бейджа
+    - name: Set badge color
+      run: |
+        if (( $(echo "${{ env.COVERAGE }} >= 80" | bc -l) )); then
+          echo "BADGE_COLOR=brightgreen" >> $GITHUB_ENV
+        elif (( $(echo "${{ env.COVERAGE }} >= 60" | bc -l) )); then
+          echo "BADGE_COLOR=yellow" >> $GITHUB_ENV
+        elif (( $(echo "${{ env.COVERAGE }} >= 40" | bc -l) )); then
+          echo "BADGE_COLOR=orange" >> $GITHUB_ENV
+        else
+          echo "BADGE_COLOR=red" >> $GITHUB_ENV
+        fi
+    
+    # Обновляем README с актуальным процентом покрытия (только для master)
+    - name: Update README with coverage badge
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: |
+        # Читаем текущий README
+        README_CONTENT=$(cat README.md)
+        
+        # Заменяем строку с бейджем покрытия
+        UPDATED_README=$(echo "$README_CONTENT" | sed "s|!\[Go\](https://github.com/ezhdanovskiy/wallets/actions/workflows/coverage.yml/badge.svg)|![Coverage](https://img.shields.io/badge/coverage-${{ env.COVERAGE }}%25-${{ env.BADGE_COLOR }})|")
+        
+        # Записываем обновлённый README
+        echo "$UPDATED_README" > README.md
+        
+        # Коммитим изменения
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add README.md
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update coverage badge to ${{ env.COVERAGE }}%"
+        git push
     
     # Для master сохраняем покрытие в артефакт
     - name: Save coverage for master
@@ -179,27 +214,3 @@ jobs:
         else
           cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
         fi
-    
-    # Создаём JSON файл с покрытием для бейджа
-    - name: Create coverage badge JSON
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
-      run: |
-        # Определяем цвет бейджа в зависимости от покрытия
-        if (( $(echo "${{ env.COVERAGE }} >= 80" | bc -l) )); then
-          COLOR="brightgreen"
-        elif (( $(echo "${{ env.COVERAGE }} >= 60" | bc -l) )); then
-          COLOR="yellow"
-        elif (( $(echo "${{ env.COVERAGE }} >= 40" | bc -l) )); then
-          COLOR="orange"
-        else
-          COLOR="red"
-        fi
-        echo "{\"schemaVersion\": 1, \"label\": \"coverage\", \"message\": \"${{ env.COVERAGE }}%\", \"color\": \"$COLOR\"}" > coverage-badge.json
-    
-    - name: Upload coverage badge JSON
-      if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-badge
-        path: coverage-badge.json
-        retention-days: 90

@@ -1,6 +1,6 @@
 # Wallets
 
-![Coverage](https://img.shields.io/badge/coverage-33.3%25-red)
+![Coverage](https://img.shields.io/badge/coverage-34.1%25-red)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ezhdanovskiy/wallets)](https://goreportcard.com/report/github.com/ezhdanovskiy/wallets)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
